@@ -1,6 +1,10 @@
 {
     "name": "angular-chordpro",
     "version": "0.1.0",
+    "main": [
+        "dist/angular-chordpro.js",
+        "dist/angular-chordpro.min.js"
+    ],
     "dependencies": {
         "angular": "~1.0.7",
         "angular-sanitize": "~1.0.7"
