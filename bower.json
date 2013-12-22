@@ -2,11 +2,16 @@
     "name": "angular-chordpro",
     "version": "0.1.0",
     "main": [
-        "dist/angular-chordpro.js",
-        "dist/angular-chordpro.min.js"
+        "dist/angular-chordpro.js"
     ],
     "ignore": [
-        ".idea"
+        ".idea",
+        ".editorconfig",
+        "bower_components",
+        "node_modules",
+        ".jshintrc",
+        "test",
+        "karma-unit.conf.js"
     ],
     "dependencies": {
         "angular": "~1.2.0",
