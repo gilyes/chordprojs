@@ -11,7 +11,10 @@ angular.module('angular-chordpro.config', [])
 // Modules
 angular.module('angular-chordpro.directives', []);
 angular.module('angular-chordpro.filters', []);
-angular.module('angular-chordpro.services', []);
+angular.module('angular-chordpro.services',
+    [
+        'ngSanitize'
+    ]);
 angular.module('angular-chordpro',
     [
         'angular-chordpro.config',

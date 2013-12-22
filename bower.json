@@ -1,6 +1,6 @@
 {
     "name": "angular-chordpro",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "main": [
         "dist/angular-chordpro.js"
     ],
@@ -10,8 +10,11 @@
         "bower_components",
         "node_modules",
         ".jshintrc",
+		"src",
         "test",
-        "karma-unit.conf.js"
+        "karma-unit.conf.js",
+        "Gruntfile.js",
+        ".gitignore"
     ],
     "dependencies": {
         "angular": "~1.2.0",

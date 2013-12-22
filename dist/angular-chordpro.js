@@ -13,7 +13,10 @@ angular.module('angular-chordpro.config', [])
 // Modules
 angular.module('angular-chordpro.directives', []);
 angular.module('angular-chordpro.filters', []);
-angular.module('angular-chordpro.services', []);
+angular.module('angular-chordpro.services',
+    [
+        'ngSanitize'
+    ]);
 angular.module('angular-chordpro',
     [
         'angular-chordpro.config',
@@ -23,7 +26,7 @@ angular.module('angular-chordpro',
         'ngSanitize'
     ]);
 angular.module('angular-chordpro.services')
-    .factory('chordpro', function () {
+    .factory('chordpro', ['$sanitize', function ($sanitize) {
 
         function parse(source) {
             var lineInfos = [];
@@ -102,49 +105,92 @@ angular.module('angular-chordpro.services')
             return lineInfos;
         }
 
-        function toText(source) {
-            var parsed = parse(source);
+        function formatLyricsEntry(entry, lineEnd, chordFormatter) {
 
-            function addChord(line, chordInfo){
-                while (line.length < chordInfo.pos) {
-                    line += ' ';
+            function addChord(line, chordInfo) {
+                // pad the current line up to the chord position
+                var strippedLine = line.replace(/(<([^>]+)>)/ig, '');
+                var padding = chordInfo.pos - strippedLine.length;
+                if (padding > 0) {
+                    line += Array(padding + 1).join(' ');
                 }
-                line += chordInfo.chord;
+
+                var chord = chordInfo.chord;
+                if (chordFormatter) {
+                    chord = chordFormatter(chord);
+                }
+
+                line += chord;
                 return line;
             }
 
             var text = '';
+
+            // add chord line if available
+            if (entry.chords.length > 0) {
+
+                var line = '';
+                entry.chords.forEach(function (chordInfo) {
+                    line = addChord(line, chordInfo);
+                });
+
+                text += line;
+            }
+
+            // add lyrics line if available, or empty line if no chords and no lyrics
+            if (entry.lyrics.length > 0 || entry.chords.length === 0) {
+                if (text.length > 0) {
+                    text += lineEnd;
+                }
+
+                text += entry.lyrics;
+            }
+
+            return text;
+        }
+
+        function format(source, newLine, chordFormatter) {
+            var parsed = parse(source);
+
+            var text = '';
             parsed.forEach(function (entry) {
                 if (entry.type === 'lyrics') {
-                    if (entry.chords.length > 0) {
-                        if (text.length > 0) {
-                            text += '\n';
-                        }
-
-                        var line = '';
-                        entry.chords.forEach(function (chordInfo) {
-                            line = addChord(line, chordInfo);
-                        });
-
-                        text += line;
+                    if (text.length > 0) {
+                        text += newLine;
                     }
-
-                    if (entry.lyrics.length > 0 || entry.chords.length === 0) {
-                        if (text.length > 0) {
-                            text += '\n';
-                        }
-
-                        text += entry.lyrics;
-                    }
+                    text += formatLyricsEntry(entry, newLine, chordFormatter);
                 }
             });
 
             return text;
         }
 
+        function toText(source) {
+            return format(source, '\n');
+        }
+
+        function toHtml(source, options) {
+            if (!options) {
+                options = {};
+            }
+
+            if (!options.chordFormatter) {
+                options.chordFormatter = function (chord) {
+                    return '<b>' + chord + '</b>';
+                };
+            }
+
+            var openingPre = '<pre>';
+            if (options.class) {
+                openingPre = '<pre class="'+ options.class + '">';
+            }
+            return $sanitize(openingPre + format(source, '<br/>', options.chordFormatter) + '</pre>');
+        }
+
         return {
             parse: parse,
-            toText: toText
+            toText: toText,
+            toHtml: toHtml
         };
-    });
+    }]);
 })(window, document);

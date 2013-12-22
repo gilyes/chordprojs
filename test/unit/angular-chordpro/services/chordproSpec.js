@@ -174,7 +174,7 @@ describe('Services: chordpro', function () {
 
     describe('toText', function () {
 
-        it ('should format source', function () {
+        it('should format source', function () {
             var source =
                 '[C]Twinkle [C/E]twinkle [F]little [C]star\n' +
                     '[F]How I [C]wonder [G]what you [C]are';
@@ -187,7 +187,7 @@ describe('Services: chordpro', function () {
                     'How I wonder what you are');
         });
 
-        it ('should maintain empty lines', function () {
+        it('should maintain empty lines', function () {
             var source =
                 '[C]Twinkle [C/E]twinkle [F]little [C]star\n\n' +
                     '[F]How I [C]wonder [G]what you [C]are';
@@ -198,6 +198,46 @@ describe('Services: chordpro', function () {
                     'Twinkle twinkle little star\n\n' +
                     'F     C      G        C\n' +
                     'How I wonder what you are');
+        });
+    });
+
+    describe('toHtml', function () {
+
+        it('should format source', function () {
+            var source =
+                '[C]Twinkle [C/E]twinkle [F]little [C]star\n' +
+                    '[F]How I [C]wonder [G]what you [C]are';
+
+            var result = chordpro.toHtml(source, {
+                chordFormatter: function (chord) { return '<i>' + chord + '</i>';}
+            });
+
+            expect(result).toBe(
+                '<pre>' +
+                    '<i>C</i>       <i>C/E</i>     <i>F</i>      <i>C</i><br/>' +
+                    'Twinkle twinkle little star<br/>' +
+                    '<i>F</i>     <i>C</i>      <i>G</i>        <i>C</i><br/>' +
+                    'How I wonder what you are' +
+                    '</pre>');
+        });
+
+        it('should add pre class if specified', function () {
+            var source =
+                '[C]Twinkle [C/E]twinkle [F]little [C]star\n' +
+                    '[F]How I [C]wonder [G]what you [C]are';
+
+            var result = chordpro.toHtml(source, {
+                chordFormatter: function (chord) { return '<i>' + chord + '</i>';},
+                class: 'test'
+            });
+
+            expect(result).toBe(
+                '<pre class="test">' +
+                    '<i>C</i>       <i>C/E</i>     <i>F</i>      <i>C</i><br/>' +
+                    'Twinkle twinkle little star<br/>' +
+                    '<i>F</i>     <i>C</i>      <i>G</i>        <i>C</i><br/>' +
+                    'How I wonder what you are' +
+                    '</pre>');
         });
     });
 });

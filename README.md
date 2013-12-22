@@ -5,13 +5,17 @@ A ChordPro parser and formatter for Angular.
 ## Usage
 
 ```javascript
+angular.module('app', [
+        'angular-chordpro'
+    ])
+
 angular.module('app')
     .controller('Controller', function ($scope, chordpro) {
 		...
-        var formattedChordpro = chordpro.toText(rawChordpro);
+        var formattedText = chordpro.toText(rawChordpro);
+        var html = chordpro.toHtml(rawChordpro);
 ```
         
 ## Current limitations
 
- - Only simple formatting to text is supported.
  - Directives, comments are not yet processed.
