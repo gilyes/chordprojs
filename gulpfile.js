@@ -1,3 +1,5 @@
+require('babel-core/register');
+
 var gulp = require('gulp'),
     jshint = require('gulp-jshint'),
     rename = require('gulp-rename'),
@@ -5,7 +7,6 @@ var gulp = require('gulp'),
     del = require('del'),
     babel = require('gulp-babel'),
     mocha = require('gulp-mocha');
-require('babel-core/register');
 
 gulp.task('build', function() {
     return gulp.src('lib/**/*.js')
@@ -35,6 +36,10 @@ gulp.task('test', function() {
         .pipe(mocha({
             reporter: 'nyan'
         }));
+});
+
+gulp.task('watch-test', function() {
+    gulp.watch(['lib/**', 'test/**'], ['test']);
 });
 
 gulp.task('clean', function() {
