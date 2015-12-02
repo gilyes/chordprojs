@@ -4,4 +4,4 @@
 
 ## Current limitations
 
- - Directives, comments are not yet processed.
+ - Directives are not yet applied by formatters.

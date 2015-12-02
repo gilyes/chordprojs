@@ -32,11 +32,11 @@ gulp.task('test', function() {
       read: false
     })
     .pipe(mocha({
-      reporter: 'nyan'
+      reporter: 'spec'
     }));
 });
 
-gulp.task('watch-test', function() {
+gulp.task('test-watch', function() {
   gulp.watch(['lib/**', 'test/**'], ['test']);
 });
 

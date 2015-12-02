@@ -160,7 +160,103 @@ describe('chordpro', function() {
       });
     })
 
-    describe('directives', function() {});
+    describe('directives', function() {
+
+      it('should set title directive type to "title"', function() {
+        var lineInfos = chordpro.parse('{title: Prison Without Walls}');
+
+        expect(lineInfos[0].type).to.equal('title');
+      });
+      it('should set abbreviated title directive type to "title"', function() {
+        var lineInfos = chordpro.parse('{t: Prison Without Walls}');
+
+        expect(lineInfos[0].type).to.equal('title');
+      });
+
+      it('should parse title directive value', function() {
+        var lineInfos = chordpro.parse('{title: Prison Without Walls}');
+
+        expect(lineInfos[0].value).to.equal('Prison Without Walls');
+      });
+
+      it('should parse abbreviated title directive value', function() {
+        var lineInfos = chordpro.parse('{t: Prison Without Walls}');
+
+        expect(lineInfos[0].value).to.equal('Prison Without Walls');
+      });
+
+      it('should set subtitle directive type to "subtitle"', function() {
+        var lineInfos = chordpro.parse('{subtitle: Napalm Death}');
+
+        expect(lineInfos[0].type).to.equal('subtitle');
+      });
+
+      it('should set abbreviated subtitle directive type to "subtitle"', function() {
+        var lineInfos = chordpro.parse('{st: Napalm Death}');
+
+        expect(lineInfos[0].type).to.equal('subtitle');
+      });
+
+      it('should parse subtitle directive value', function() {
+        var lineInfos = chordpro.parse('{subtitle: Napalm Death}');
+
+        expect(lineInfos[0].value).to.equal('Napalm Death');
+      });
+
+      it('should parse abbreviated subtitle directive value', function() {
+        var lineInfos = chordpro.parse('{st: Napalm Death}');
+
+        expect(lineInfos[0].value).to.equal('Napalm Death');
+      });
+
+      it('should set comment directive type to "comment"', function() {
+        var lineInfos = chordpro.parse('{c: this is a comment}');
+
+        expect(lineInfos[0].type).to.equal('comment');
+      });
+
+      it('should parse comment directive value', function() {
+        var lineInfos = chordpro.parse('{c: this is a comment}');
+
+        expect(lineInfos[0].value).to.equal('this is a comment');
+      });
+
+      it('should set start of chorus directive type to "soc"', function() {
+        var lineInfos = chordpro.parse('{soc}');
+
+        expect(lineInfos[0].type).to.equal('soc');
+      });
+
+      it('should set end of chorus directive type to "eoc"', function() {
+        var lineInfos = chordpro.parse('{eoc}');
+
+        expect(lineInfos[0].type).to.equal('eoc');
+      });
+
+      it('should set start of tab directive type to "sot"', function() {
+        var lineInfos = chordpro.parse('{sot}');
+
+        expect(lineInfos[0].type).to.equal('sot');
+      });
+
+      it('should set end of tab directive type to "eot"', function() {
+        var lineInfos = chordpro.parse('{eot}');
+
+        expect(lineInfos[0].type).to.equal('eot');
+      });
+
+      it('should set start of highlight directive type to "soh"', function() {
+        var lineInfos = chordpro.parse('{soh}');
+
+        expect(lineInfos[0].type).to.equal('soh');
+      });
+
+      it('should set end of highlight directive type to "eoh"', function() {
+        var lineInfos = chordpro.parse('{eoh}');
+
+        expect(lineInfos[0].type).to.equal('eoh');
+      });
+    });
 
     describe('comments', function() {});
   });
