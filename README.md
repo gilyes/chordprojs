@@ -4,4 +4,4 @@
 
 ## Current limitations
 
- - Directives are not yet applied by formatters.
+ - Only title and subtitle directives applied by formatters.

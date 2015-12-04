@@ -14,20 +14,21 @@ var _sanitizeHtml2 = _interopRequireDefault(_sanitizeHtml);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function parse(source) {
-  var lineInfos = [];
+  var parsedLines = [];
 
-  var commentRegex = /^#.*/;
+  var commentRegex = /^\s*#.*/;
   source.split('\n').forEach(function (line) {
     if (!line.match(commentRegex)) {
-      lineInfos.push(parseLine(line));
+      parsedLines.push(parseLine(line));
     }
   });
 
-  return lineInfos;
+  return parsedLines;
 }
 
 function parseLine(line) {
-  var lineInfo = {
+  var parsedLine = {
+    line: line,
     lyrics: '',
     chords: [],
     directives: []
@@ -65,34 +66,34 @@ function parseLine(line) {
       // append lyrics text ending at current match position
       fragment = line.substring(sourcePos, _match.index);
       if (fragment) {
-        lineInfo.lyrics += fragment;
+        parsedLine.lyrics += fragment;
       }
 
       if (_match.type == 'chord') {
         // determine offset to apply if previous chord is too long and would overlap with current chord
         var offset = 0;
-        if (lineInfo.chords.length > 0) {
-          var previousChordInfo = lineInfo.chords[lineInfo.chords.length - 1];
-          offset = Math.max(0, previousChordInfo.pos + previousChordInfo.value.length + 1 - lineInfo.lyrics.length);
+        if (parsedLine.chords.length > 0) {
+          var previousChordInfo = parsedLine.chords[parsedLine.chords.length - 1];
+          offset = Math.max(0, previousChordInfo.pos + previousChordInfo.value.length + 1 - parsedLine.lyrics.length);
         }
 
         // pad lyrics field if needed
         for (var i = 0; i < offset; i++) {
-          lineInfo.lyrics += ' ';
+          parsedLine.lyrics += ' ';
         }
 
         // add chord
         var sourceChord = _match[0];
-        lineInfo.chords.push({
-          pos: lineInfo.lyrics.length,
+        parsedLine.chords.push({
+          pos: parsedLine.lyrics.length,
           value: sourceChord.replace(/[\[\]]/g, '')
         });
         sourcePos = _match.index + sourceChord.length;
       } else if (_match.type == 'directive') {
         // directive
         var directive = _match[0];
-        lineInfo.directives.push({
-          pos: lineInfo.lyrics.length,
+        parsedLine.directives.push({
+          pos: parsedLine.lyrics.length,
           type: getDirectiveType(_match[1]),
           value: _match[2]
         });
@@ -118,13 +119,13 @@ function parseLine(line) {
 
   fragment = line.substring(sourcePos, line.length);
   if (fragment) {
-    lineInfo.lyrics += fragment;
+    parsedLine.lyrics += fragment;
   }
 
   // trim end of lyrics text
-  lineInfo.lyrics = lineInfo.lyrics.replace(/\s+$/, '');
+  parsedLine.lyrics = parsedLine.lyrics.replace(/\s+$/, '');
 
-  return lineInfo;
+  return parsedLine;
 }
 
 function getDirectiveType(type) {
@@ -139,7 +140,7 @@ function getDirectiveType(type) {
   return type;
 }
 
-function formatLyricsEntry(entry, lineEnd, chordFormatter) {
+function formatParsedLine(parsedLine, options) {
 
   function addChord(line, chordInfo) {
     // pad the current line up to the chord position
@@ -150,8 +151,8 @@ function formatLyricsEntry(entry, lineEnd, chordFormatter) {
     }
 
     var chord = chordInfo.value;
-    if (chordFormatter) {
-      chord = chordFormatter(chord);
+    if (options && options.chordFormatter) {
+      chord = options.chordFormatter(chord);
     }
 
     line += chord;
@@ -160,45 +161,151 @@ function formatLyricsEntry(entry, lineEnd, chordFormatter) {
 
   var text = '';
 
-  // add chord line if available
-  if (entry.chords.length > 0) {
+  // TODO: process other directives (title/subtitle processed separately)
+  var _iteratorNormalCompletion2 = true;
+  var _didIteratorError2 = false;
+  var _iteratorError2 = undefined;
+
+  try {
+    for (var _iterator2 = parsedLine.directives[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+      var directive = _step2.value;
+    }
+
+    // add chord line if available
+  } catch (err) {
+    _didIteratorError2 = true;
+    _iteratorError2 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion2 && _iterator2.return) {
+        _iterator2.return();
+      }
+    } finally {
+      if (_didIteratorError2) {
+        throw _iteratorError2;
+      }
+    }
+  }
+
+  if (parsedLine.chords.length > 0) {
+    if (text.length > 0) {
+      text += options.newLine;
+    }
 
     var line = '';
-    entry.chords.forEach(function (chordInfo) {
+    parsedLine.chords.forEach(function (chordInfo) {
       line = addChord(line, chordInfo);
     });
 
     text += line;
   }
 
-  // add lyrics line if available, or empty line if no chords and no lyrics
-  if (entry.lyrics.length > 0 || entry.chords.length === 0) {
+  // add lyrics line if available, or empty line if no chords/directives and no lyrics
+  if (parsedLine.lyrics.length > 0 || parsedLine.chords.length === 0 && parsedLine.directives.length === 0) {
     if (text.length > 0) {
-      text += lineEnd;
+      text += options.newLine;
     }
 
-    text += entry.lyrics;
+    text += parsedLine.lyrics;
   }
 
   return text;
 }
 
-function format(source, newLine, chordFormatter) {
-  var parsed = parse(source);
+function format(source, options) {
 
+  // sanitize input, remove all tags
+  source = (0, _sanitizeHtml2.default)(source, {
+    allowedTags: [],
+    allowedAttributes: []
+  });
+
+  var parsedLines = parse(source);
+
+  if (!options) {
+    options = {};
+  }
+
+  if (!options.newLine) {
+    options.newLine = '\n';
+  }
+
+  // add title if found
   var text = '';
-  parsed.forEach(function (entry) {
-    if (text.length > 0) {
-      text += newLine;
+  var title = getDirectiveValue(parsedLines, 'title');
+  if (title) {
+    if (options && options.titleFormatter) {
+      title = options.titleFormatter(title);
     }
-    text += formatLyricsEntry(entry, newLine, chordFormatter);
+    text += title;
+  }
+
+  // add subtitle if found
+  var subTitle = getDirectiveValue(parsedLines, 'subtitle');
+  if (subTitle) {
+    if (text.length > 0) {
+      text += options.newLine;
+    }
+
+    if (options && options.subtitleFormatter) {
+      subTitle = options.subtitleFormatter(subTitle);
+    }
+    text += subTitle;
+  }
+
+  // add empty line after title section
+  if (text.length > 0) {
+    text += options.newLine;
+  }
+
+  parsedLines.forEach(function (parsedLine) {
+    // if there is already text and current line is empty or has lyrics and/or chords then start on a new line
+    if (text.length > 0 && (parsedLine.lyrics.length > 0 || parsedLine.chords.length > 0 || parsedLine.line.length == 0)) {
+      text += options.newLine;
+    }
+
+    text += formatParsedLine(parsedLine, options);
   });
 
   return text;
 }
 
+function getDirectiveValue(parsedLines, directiveKey) {
+  var _iteratorNormalCompletion3 = true;
+  var _didIteratorError3 = false;
+  var _iteratorError3 = undefined;
+
+  try {
+    for (var _iterator3 = parsedLines[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+      var parsedLine = _step3.value;
+
+      if (parsedLine.directives) {
+        var directive = parsedLine.directives.find(function (element, index, array) {
+          return element.type === directiveKey;
+        });
+        if (directive) {
+          return directive.value;
+        }
+      }
+    }
+  } catch (err) {
+    _didIteratorError3 = true;
+    _iteratorError3 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion3 && _iterator3.return) {
+        _iterator3.return();
+      }
+    } finally {
+      if (_didIteratorError3) {
+        throw _iteratorError3;
+      }
+    }
+  }
+}
+
 function toText(source) {
-  return format(source, '\n');
+  return format(source);
 }
 
 function toHtml(source, options) {
@@ -212,14 +319,26 @@ function toHtml(source, options) {
     };
   }
 
+  if (!options.titleFormatter) {
+    options.titleFormatter = function (title) {
+      return '<h1>' + title + '</h1>';
+    };
+  }
+
+  if (!options.subtitleFormatter) {
+    options.subtitleFormatter = function (subtitle) {
+      return '<h2>' + subtitle + '</h2>';
+    };
+  }
+
+  if (!options.newLine) {
+    options.newLine = "<br/>";
+  }
+
   var openingPre = '<pre>';
   if (options.class) {
     openingPre = '<pre class="' + options.class + '">';
   }
 
-  return (0, _sanitizeHtml2.default)(openingPre + format(source, '<br/>', options.chordFormatter) + '</pre>', {
-    allowedAttributes: {
-      'pre': ['class']
-    }
-  });
+  return openingPre + format(source, options) + '</pre>';
 }
