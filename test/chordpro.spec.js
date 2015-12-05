@@ -455,7 +455,7 @@ describe('chordpro', function() {
 
       var result = chordpro.toHtml(source);
       expect(result).to.equal(
-        '<div class="song-title">The Title</div><div class="empty-line"></div><div class="empty-line"></div><div class="line"><div class="linefragment"><div class="lyrics">Lyrics </div></div><div class="linefragment"><div class="lyrics">go </div></div><div class="linefragment"><div class="lyrics">here</div></div></div>');
+        '<div class="song-title-section"><div class="song-title">The Title</div></div><div class="line"><div class="linefragment"><div class="lyrics">Lyrics </div></div><div class="linefragment"><div class="lyrics">go </div></div><div class="linefragment"><div class="lyrics">here</div></div></div>');
     });
 
     it('should not add chord div if no chords on line', function() {
@@ -465,7 +465,7 @@ describe('chordpro', function() {
 
       var result = chordpro.toHtml(source);
       expect(result).to.equal(
-        '<div class="song-title">The Title</div><div class="empty-line"></div><div class="empty-line"></div><div class="line"><div class="linefragment"><div class="lyrics">Lyrics </div></div><div class="linefragment"><div class="lyrics">go </div></div><div class="linefragment"><div class="lyrics">here</div></div></div>');
+        '<div class="song-title-section"><div class="song-title">The Title</div></div><div class="line"><div class="linefragment"><div class="lyrics">Lyrics </div></div><div class="linefragment"><div class="lyrics">go </div></div><div class="linefragment"><div class="lyrics">here</div></div></div>');
     });
 
     it('should add chord divs for all segments if there are chords on line', function() {
@@ -475,7 +475,7 @@ describe('chordpro', function() {
 
       var result = chordpro.toHtml(source);
       expect(result).to.equal(
-        '<div class="song-title">The Title</div><div class="empty-line"></div><div class="empty-line"></div><div class="line"><div class="linefragment"><div class="chord">&nbsp;</div><div class="lyrics">Lyrics </div></div><div class="linefragment"><div class="chord">&nbsp;</div><div class="lyrics">go </div></div><div class="linefragment"><div class="chord">C</div><div class="lyrics">here</div></div></div>');
+        '<div class="song-title-section"><div class="song-title">The Title</div></div><div class="line"><div class="linefragment"><div class="chord">&nbsp;</div><div class="lyrics">Lyrics </div></div><div class="linefragment"><div class="chord">&nbsp;</div><div class="lyrics">go </div></div><div class="linefragment"><div class="chord">C</div><div class="lyrics">here</div></div></div>');
     });
 
     it('should not cut off leading [ when not part of a chord', function() {

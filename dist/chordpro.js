@@ -258,8 +258,6 @@ function _getLyricsHtml(lyrics, startIndex, endIndex) {
 
 function toHtml(source) {
 
-  var newline = '<div class="empty-line"></div>';
-
   // sanitize input, remove all tags
   source = (0, _sanitizeHtml2.default)(source, {
     allowedTags: [],
@@ -270,34 +268,22 @@ function toHtml(source) {
 
   var html = '';
 
-  // add title if found
+  // add title and subtitle if found
   var title = _getDirectiveValue(parsedLines, 'title');
-  if (title) {
-    html += '<div class="song-title">' + title + '</div>';
-  }
-
-  // add subtitle if found
   var subTitle = _getDirectiveValue(parsedLines, 'subtitle');
-  if (subTitle) {
-    if (html.length > 0) {
-      html += newline;
+  if (title || subTitle) {
+    html += '<div class="song-title-section">';
+    if (title) {
+      html += '<div class="song-title">' + title + '</div>';
     }
-
-    html += '<div class="song-subtitle">' + subTitle + '</div>';
-  }
-
-  // add empty line after title section
-  if (html.length > 0) {
-    html += newline;
+    if (subTitle) {
+      html += '<div class="song-subtitle">' + subTitle + '</div>';
+    }
+    html += '</div>';
   }
 
   parsedLines.forEach(function (parsedLine) {
-    // if there is already text and current line is not a directive-only line then insert a new line
-    if (html.length > 0 && (parsedLine.lyrics.length > 0 || parsedLine.chords.length > 0 || parsedLine.line.length == 0)) {
-      html += newline;
-    }
-
-    html += _formatParsedLine(parsedLine, newline);
+    html += _formatParsedLine(parsedLine);
   });
 
   return html;
