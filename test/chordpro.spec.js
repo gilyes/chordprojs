@@ -330,133 +330,153 @@ describe('chordpro', function() {
 
   });
 
-  describe('toText', function() {
+  describe('_getSegmentStartIndexes', function() {
 
-    it('should format source', function() {
-      var source =
-        '[C]Twinkle [C/E]twinkle [F]little [C]star\n' +
-        '[F]How I [C]wonder [G]what you [C]are';
+    it('should split up at word starts (no chords, non-empty lyrics)', function() {
+      var parsedLine = {
+        lyrics: 'one two three'
+      };
+      var indexes = chordpro._getSegmentStartIndexes(parsedLine);
 
-      var result = chordpro.toText(source);
-      expect(result).to.equal(
-        'C       C/E     F      C\n' +
-        'Twinkle twinkle little star\n' +
-        'F     C      G        C\n' +
-        'How I wonder what you are');
+      expect(indexes.length).to.equal(3);
+      expect(indexes).to.eql([0, 4, 8]);
     });
 
-    it('should maintain empty lines', function() {
-      var source =
-        '[C]Twinkle [C/E]twinkle [F]little [C]star\n\n' +
-        '[F]How I [C]wonder [G]what you [C]are';
+    it('should split up at word starts (chord at word start, non-empty lyrics)', function() {
+      var parsedLine = {
+        lyrics: 'one two three',
+        chords: [{
+          value: 'C',
+          pos: 4
+        }]
+      };
+      var indexes = chordpro._getSegmentStartIndexes(parsedLine);
 
-      var result = chordpro.toText(source);
-      expect(result).to.equal(
-        'C       C/E     F      C\n' +
-        'Twinkle twinkle little star\n\n' +
-        'F     C      G        C\n' +
-        'How I wonder what you are');
+      expect(indexes.length).to.equal(3);
+      expect(indexes).to.eql([0, 4, 8]);
     });
 
-    it('should display title directive with empty line after', function() {
-      var source =
-        '{t: The Title}\n' +
-        'Lyrics go here';
+    it('should split up at word starts and chords (chord not at word start, non-empty lyrics)', function() {
+      var parsedLine = {
+        lyrics: 'one two three',
+        chords: [{
+          value: 'C',
+          pos: 5
+        }]
+      };
+      var indexes = chordpro._getSegmentStartIndexes(parsedLine);
 
-      var result = chordpro.toText(source);
-      expect(result).to.equal(
-        'The Title\n\n' +
-        'Lyrics go here');
+      expect(indexes.length).to.equal(4);
+      expect(indexes).to.eql([0, 4, 5, 8]);
     });
 
-    it('should display subtitle directive with empty line after', function() {
-      var source =
-        '{st: The Subtitles}\n' +
-        'Lyrics go here';
+    it('should should skip word start if chord overlaps it', function() {
+      var parsedLine = {
+        lyrics: 'one two three',
+        chords: [{
+          value: 'C7',
+          pos: 3
+        }]
+      };
+      var indexes = chordpro._getSegmentStartIndexes(parsedLine);
 
-      var result = chordpro.toText(source);
-      expect(result).to.equal(
-        'The Subtitles\n\n' +
-        'Lyrics go here');
+      expect(indexes.length).to.equal(3);
+      expect(indexes).to.eql([0, 3, 8]);
     });
 
-    it('should display title/subtitle directives with empty line after', function() {
-      var source =
-        '{t: The Title}\n' +
-        '{st: The Subtitles}\n' +
-        'Lyrics go here';
+    it('should split up at chords (empty lyrics)', function() {
+      var parsedLine = {
+        chords: [{
+          value: 'C',
+          pos: 5
+        }, {
+          value: 'D',
+          pos: 7
+        }]
+      };
+      var indexes = chordpro._getSegmentStartIndexes(parsedLine);
 
-      var result = chordpro.toText(source);
-      expect(result).to.equal(
-        'The Title\n' +
-        'The Subtitles\n\n' +
-        'Lyrics go here');
+      expect(indexes.length).to.equal(2);
+      expect(indexes).to.eql([5, 7]);
+    });
+  });
+
+  describe('_getChordHtml', function() {
+
+    it('should return formatted chord at matching position', function() {
+      var chords = [{
+        value: 'C',
+        pos: 5
+      }];
+      var html = chordpro._getChordHtml(chords, 5);
+
+      expect(html).to.equal('<div class="chord">C</div>');
+    });
+
+    it('should return non-breaking space at non-matching position', function() {
+      var chords = [{
+        value: 'C',
+        pos: 5
+      }];
+      var html = chordpro._getChordHtml(chords, 4);
+
+      expect(html).to.equal('<div class="chord">&nbsp;</div>');
+    });
+
+  });
+
+  describe('_getLyricsHtml', function() {
+
+    it('should return formatted lyrics segment between start and end index', function() {
+      var html = chordpro._getLyricsHtml('one two three', 4, 7);
+
+      expect(html).to.equal('<div class="lyrics">two </div>')
+    });
+
+    it('should return non-breaking space after lyrics end', function() {
+      var html = chordpro._getLyricsHtml('one two three', 13);
+
+      expect(html).to.equal('<div class="lyrics">&nbsp;</div>')
+    });
+
+    it('should return text until end of lyrics if endIndex not specified', function() {
+      var html = chordpro._getLyricsHtml('one two three', 8);
+
+      expect(html).to.equal('<div class="lyrics">three</div>')
     });
   });
 
   describe('toHtml', function() {
 
-    it('should format source', function() {
-      var source =
-        '[C]Twinkle [C/E]twinkle [F]little [C]star\n' +
-        '[F]How I [C]wonder [G]what you [C]are';
-
-      var result = chordpro.toHtml(source, {
-        chordFormatter: function(chord) {
-          return '<i>' + chord + '</i>';
-        }
-      });
-
-      expect(result).to.equal(
-        '<pre>' +
-        '<i>C</i>       <i>C/E</i>     <i>F</i>      <i>C</i><br/>' +
-        'Twinkle twinkle little star<br/>' +
-        '<i>F</i>     <i>C</i>      <i>G</i>        <i>C</i><br/>' +
-        'How I wonder what you are' +
-        '</pre>');
-    });
-
-    it('should add pre class if specified', function() {
-      var source =
-        '[C]Twinkle [C/E]twinkle [F]little [C]star\n' +
-        '[F]How I [C]wonder [G]what you [C]are';
-
-      var result = chordpro.toHtml(source, {
-        chordFormatter: function(chord) {
-          return '<i>' + chord + '</i>';
-        },
-        class: 'test'
-      });
-
-      expect(result).to.equal(
-        '<pre class="test">' +
-        '<i>C</i>       <i>C/E</i>     <i>F</i>      <i>C</i><br/>' +
-        'Twinkle twinkle little star<br/>' +
-        '<i>F</i>     <i>C</i>      <i>G</i>        <i>C</i><br/>' +
-        'How I wonder what you are' +
-        '</pre>');
-    });
-
-    it('should display title directive with h1 tag by default', function() {
+    it('should display title directive with proper class', function() {
       var source =
         '{t: The Title}\n' +
         'Lyrics go here';
 
       var result = chordpro.toHtml(source);
       expect(result).to.equal(
-        '<pre><h1>The Title</h1><br/><br/>' +
-        'Lyrics go here</pre>');
+        '<div class="song-title">The Title</div><div class="empty-line"></div><div class="empty-line"></div><div class="line"><div class="linefragment"><div class="lyrics">Lyrics </div></div><div class="linefragment"><div class="lyrics">go </div></div><div class="linefragment"><div class="lyrics">here</div></div></div>');
     });
 
-    it('should display subtitle directive with h2 tag by default', function() {
+    it('should not add chord div if no chords on line', function() {
       var source =
-        '{st: The Subtitles}\n' +
+        '{t: The Title}\n' +
         'Lyrics go here';
 
       var result = chordpro.toHtml(source);
       expect(result).to.equal(
-        '<pre><h2>The Subtitles</h2><br/><br/>' +
-        'Lyrics go here</pre>');
+        '<div class="song-title">The Title</div><div class="empty-line"></div><div class="empty-line"></div><div class="line"><div class="linefragment"><div class="lyrics">Lyrics </div></div><div class="linefragment"><div class="lyrics">go </div></div><div class="linefragment"><div class="lyrics">here</div></div></div>');
     });
+
+    it('should add chord divs for all segments if there are chords on line', function() {
+      var source =
+        '{t: The Title}\n' +
+        'Lyrics go [C]here';
+
+      var result = chordpro.toHtml(source);
+      expect(result).to.equal(
+        '<div class="song-title">The Title</div><div class="empty-line"></div><div class="empty-line"></div><div class="line"><div class="linefragment"><div class="chord">&nbsp;</div><div class="lyrics">Lyrics </div></div><div class="linefragment"><div class="chord">&nbsp;</div><div class="lyrics">go </div></div><div class="linefragment"><div class="chord">C</div><div class="lyrics">here</div></div></div>');
+    });
+
   });
 });
