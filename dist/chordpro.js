@@ -4,12 +4,18 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.parse = parse;
-exports.toText = toText;
+exports._getSegmentStartIndexes = _getSegmentStartIndexes;
+exports._getChordHtml = _getChordHtml;
+exports._getLyricsHtml = _getLyricsHtml;
 exports.toHtml = toHtml;
 
 var _sanitizeHtml = require('sanitize-html');
 
 var _sanitizeHtml2 = _interopRequireDefault(_sanitizeHtml);
+
+var _underscore = require('underscore');
+
+var _underscore2 = _interopRequireDefault(_underscore);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19,14 +25,14 @@ function parse(source) {
   var commentRegex = /^\s*#.*/;
   source.split('\n').forEach(function (line) {
     if (!line.match(commentRegex)) {
-      parsedLines.push(parseLine(line));
+      parsedLines.push(_parseLine(line));
     }
   });
 
   return parsedLines;
 }
 
-function parseLine(line) {
+function _parseLine(line) {
   var parsedLine = {
     line: line,
     lyrics: '',
@@ -94,7 +100,7 @@ function parseLine(line) {
         var directive = _match[0];
         parsedLine.directives.push({
           pos: parsedLine.lyrics.length,
-          type: getDirectiveType(_match[1]),
+          type: _getDirectiveType(_match[1]),
           value: _match[2]
         });
         sourcePos = _match.index + directive.length;
@@ -128,7 +134,7 @@ function parseLine(line) {
   return parsedLine;
 }
 
-function getDirectiveType(type) {
+function _getDirectiveType(type) {
   type = type.toLowerCase();
   if (type === 't') {
     return 'title';
@@ -140,79 +146,119 @@ function getDirectiveType(type) {
   return type;
 }
 
-function formatParsedLine(parsedLine, options) {
+function _formatParsedLine(parsedLine) {
+  var indexes = _getSegmentStartIndexes(parsedLine);
 
-  function addChord(line, chordInfo) {
-    // pad the current line up to the chord position
-    var strippedLine = line.replace(/(<([^>]+)>)/ig, '');
-    var padding = chordInfo.pos - strippedLine.length;
-    if (padding > 0) {
-      line += Array(padding + 1).join(' ');
+  var html = '';
+  for (var i = 0; i < indexes.length; i++) {
+    html += '<div class="linefragment">';
+    if (parsedLine.chords && parsedLine.chords.length) {
+      // chord line takes up space even if because it uses &nbsp;, skip if no chords in this line
+      html += _getChordHtml(parsedLine.chords, indexes[i]);
     }
-
-    var chord = chordInfo.value;
-    if (options && options.chordFormatter) {
-      chord = options.chordFormatter(chord);
-    }
-
-    line += chord;
-    return line;
+    html += _getLyricsHtml(parsedLine.lyrics, indexes[i], i < indexes.length - 1 ? indexes[i + 1] - 1 : null);
+    html += '</div>';
   }
 
-  var text = '';
-
-  // TODO: process other directives (title/subtitle processed separately)
-  var _iteratorNormalCompletion2 = true;
-  var _didIteratorError2 = false;
-  var _iteratorError2 = undefined;
-
-  try {
-    for (var _iterator2 = parsedLine.directives[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-      var directive = _step2.value;
-    }
-
-    // add chord line if available
-  } catch (err) {
-    _didIteratorError2 = true;
-    _iteratorError2 = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion2 && _iterator2.return) {
-        _iterator2.return();
-      }
-    } finally {
-      if (_didIteratorError2) {
-        throw _iteratorError2;
-      }
-    }
-  }
-
-  if (parsedLine.chords.length > 0) {
-    if (text.length > 0) {
-      text += options.newLine;
-    }
-
-    var line = '';
-    parsedLine.chords.forEach(function (chordInfo) {
-      line = addChord(line, chordInfo);
-    });
-
-    text += line;
-  }
-
-  // add lyrics line if available, or empty line if no chords/directives and no lyrics
-  if (parsedLine.lyrics.length > 0 || parsedLine.chords.length === 0 && parsedLine.directives.length === 0) {
-    if (text.length > 0) {
-      text += options.newLine;
-    }
-
-    text += parsedLine.lyrics;
-  }
-
-  return text;
+  return html ? '<div class="line">' + html + '</div>' : "";
 }
 
-function format(source, options) {
+function _getSegmentStartIndexes(parsedLine) {
+  function indexOfGroup(match, n) {
+    var index = match.index;
+    for (var i = 1; i < n; i++) {
+      index += match[i].length;
+    }
+    return index;
+  }
+
+  var indexes = [];
+  // find word starts
+  if (parsedLine.lyrics && parsedLine.lyrics.length > 0) {
+    var wordRegex = /(\s*)(\w+)/g;
+    var match;
+    while (match = wordRegex.exec(parsedLine.lyrics)) {
+      var index = indexOfGroup(match, 2);
+      if (!_underscore2.default.find(parsedLine.chords, function (chord) {
+        return index > chord.pos && index <= chord.pos + chord.value.length;
+      })) {
+        indexes.push(index);
+      }
+    }
+  }
+
+  // add in chord indexes that are not on word starts
+  if (parsedLine.chords) {
+    var _iteratorNormalCompletion2 = true;
+    var _didIteratorError2 = false;
+    var _iteratorError2 = undefined;
+
+    try {
+      for (var _iterator2 = parsedLine.chords[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+        var chord = _step2.value;
+
+        if (!_underscore2.default.contains(indexes, chord.pos)) {
+          indexes.push(chord.pos);
+        }
+      }
+    } catch (err) {
+      _didIteratorError2 = true;
+      _iteratorError2 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion2 && _iterator2.return) {
+          _iterator2.return();
+        }
+      } finally {
+        if (_didIteratorError2) {
+          throw _iteratorError2;
+        }
+      }
+    }
+  }
+
+  // sort indexes
+  indexes.sort(function (i1, i2) {
+    return i1 - i2;
+  });
+
+  return indexes;
+}
+
+function _getChordHtml(chords, startIndex) {
+  var html = '<div class="chord">';
+  var chord;
+  if (chords) {
+    chord = _underscore2.default.find(chords, function (c) {
+      return c.pos == startIndex;
+    });
+  }
+  if (chord) {
+    html += chord.value;
+  } else {
+    html += "&nbsp;";
+  }
+  html += '</div>';
+  return html;
+}
+
+function _getLyricsHtml(lyrics, startIndex, endIndex) {
+  var html = '<div class="lyrics">';
+  if (startIndex > lyrics.length - 1) {
+    html += '&nbsp;';
+  } else {
+    if (!endIndex) {
+      endIndex = lyrics.length - 1;
+    }
+    html += lyrics.substring(startIndex, endIndex + 1);
+  }
+  html += '</div>';
+  return html;
+}
+
+function toHtml(source, css) {
+
+  var newline = '<div class="empty-line"></div>';
 
   // sanitize input, remove all tags
   source = (0, _sanitizeHtml2.default)(source, {
@@ -222,55 +268,43 @@ function format(source, options) {
 
   var parsedLines = parse(source);
 
-  if (!options) {
-    options = {};
-  }
-
-  if (!options.newLine) {
-    options.newLine = '\n';
-  }
+  var html = '';
+  if (css) {}
 
   // add title if found
-  var text = '';
-  var title = getDirectiveValue(parsedLines, 'title');
+  var title = _getDirectiveValue(parsedLines, 'title');
   if (title) {
-    if (options && options.titleFormatter) {
-      title = options.titleFormatter(title);
-    }
-    text += title;
+    html += '<div class="song-title">' + title + '</div>';
   }
 
   // add subtitle if found
-  var subTitle = getDirectiveValue(parsedLines, 'subtitle');
+  var subTitle = _getDirectiveValue(parsedLines, 'subtitle');
   if (subTitle) {
-    if (text.length > 0) {
-      text += options.newLine;
+    if (html.length > 0) {
+      html += newline;
     }
 
-    if (options && options.subtitleFormatter) {
-      subTitle = options.subtitleFormatter(subTitle);
-    }
-    text += subTitle;
+    html += '<div class="song-subtitle">' + subTitle + '</div>';
   }
 
   // add empty line after title section
-  if (text.length > 0) {
-    text += options.newLine;
+  if (html.length > 0) {
+    html += newline;
   }
 
   parsedLines.forEach(function (parsedLine) {
-    // if there is already text and current line is empty or has lyrics and/or chords then start on a new line
-    if (text.length > 0 && (parsedLine.lyrics.length > 0 || parsedLine.chords.length > 0 || parsedLine.line.length == 0)) {
-      text += options.newLine;
+    // if there is already text and current line is not a directive-only line the insert a new line
+    if (html.length > 0 && (parsedLine.lyrics.length > 0 || parsedLine.chords.length > 0 || parsedLine.line.length == 0)) {
+      html += newline;
     }
 
-    text += formatParsedLine(parsedLine, options);
+    html += _formatParsedLine(parsedLine, newline);
   });
 
-  return text;
+  return html;
 }
 
-function getDirectiveValue(parsedLines, directiveKey) {
+function _getDirectiveValue(parsedLines, directiveKey) {
   var _iteratorNormalCompletion3 = true;
   var _didIteratorError3 = false;
   var _iteratorError3 = undefined;
@@ -302,43 +336,4 @@ function getDirectiveValue(parsedLines, directiveKey) {
       }
     }
   }
-}
-
-function toText(source) {
-  return format(source);
-}
-
-function toHtml(source, options) {
-  if (!options) {
-    options = {};
-  }
-
-  if (!options.chordFormatter) {
-    options.chordFormatter = function (chord) {
-      return '<b>' + chord + '</b>';
-    };
-  }
-
-  if (!options.titleFormatter) {
-    options.titleFormatter = function (title) {
-      return '<h1>' + title + '</h1>';
-    };
-  }
-
-  if (!options.subtitleFormatter) {
-    options.subtitleFormatter = function (subtitle) {
-      return '<h2>' + subtitle + '</h2>';
-    };
-  }
-
-  if (!options.newLine) {
-    options.newLine = "<br/>";
-  }
-
-  var openingPre = '<pre>';
-  if (options.class) {
-    openingPre = '<pre class="' + options.class + '">';
-  }
-
-  return openingPre + format(source, options) + '</pre>';
 }
