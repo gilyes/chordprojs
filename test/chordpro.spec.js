@@ -478,5 +478,12 @@ describe('chordpro', function() {
         '<div class="song-title">The Title</div><div class="empty-line"></div><div class="empty-line"></div><div class="line"><div class="linefragment"><div class="chord">&nbsp;</div><div class="lyrics">Lyrics </div></div><div class="linefragment"><div class="chord">&nbsp;</div><div class="lyrics">go </div></div><div class="linefragment"><div class="chord">C</div><div class="lyrics">here</div></div></div>');
     });
 
+    it('should not cut off leading [ when not part of a chord', function() {
+      var source = '[No chord] Lyrics';
+
+      var result = chordpro.toHtml(source);
+      expect(result).to.equal(
+        '<div class="line"><div class="linefragment"><div class="lyrics">[No </div></div><div class="linefragment"><div class="lyrics">chord] </div></div><div class="linefragment"><div class="lyrics">Lyrics</div></div></div>');
+    });
   });
 });

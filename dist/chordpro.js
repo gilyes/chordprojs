@@ -175,7 +175,7 @@ function _getSegmentStartIndexes(parsedLine) {
   var indexes = [];
   // find word starts
   if (parsedLine.lyrics && parsedLine.lyrics.length > 0) {
-    var wordRegex = /(\s*)(\w+)/g;
+    var wordRegex = /(\s*)([^\s]+)/g;
     var match;
     while (match = wordRegex.exec(parsedLine.lyrics)) {
       var index = indexOfGroup(match, 2);
@@ -256,7 +256,7 @@ function _getLyricsHtml(lyrics, startIndex, endIndex) {
   return html;
 }
 
-function toHtml(source, css) {
+function toHtml(source) {
 
   var newline = '<div class="empty-line"></div>';
 
@@ -269,7 +269,6 @@ function toHtml(source, css) {
   var parsedLines = parse(source);
 
   var html = '';
-  if (css) {}
 
   // add title if found
   var title = _getDirectiveValue(parsedLines, 'title');
@@ -293,7 +292,7 @@ function toHtml(source, css) {
   }
 
   parsedLines.forEach(function (parsedLine) {
-    // if there is already text and current line is not a directive-only line the insert a new line
+    // if there is already text and current line is not a directive-only line then insert a new line
     if (html.length > 0 && (parsedLine.lyrics.length > 0 || parsedLine.chords.length > 0 || parsedLine.line.length == 0)) {
       html += newline;
     }
