@@ -1,5 +1,8 @@
 'use strict';
-import { expect } from 'chai';
+import {
+  expect
+}
+from 'chai';
 import * as chordpro from '../lib/chordpro';
 
 describe('chordpro', function() {
@@ -58,29 +61,6 @@ describe('chordpro', function() {
 
       expect(parsedLines.length).to.equal(1);
       expect(parsedLines[0].lyrics).to.equal('');
-    });
-
-    it('should leave at least one space between chords', function() {
-      var parsedLines = chordpro.parse('[C] [D]');
-
-      expect(parsedLines.length).to.equal(1);
-      expect(parsedLines[0].chords.length).to.equal(2);
-      expect(parsedLines[0].chords[0].value).to.equal('C');
-      expect(parsedLines[0].chords[0].pos).to.equal(0);
-      expect(parsedLines[0].chords[1].value).to.equal('D');
-      expect(parsedLines[0].chords[1].pos).to.equal(2);
-    });
-
-    it('should shift text to accomodate longer chords', function() {
-      var parsedLines = chordpro.parse('[Cmin] [Dmin]one');
-
-      expect(parsedLines.length).to.equal(1);
-      expect(parsedLines[0].lyrics).to.equal('     one');
-      expect(parsedLines[0].chords.length).to.equal(2);
-      expect(parsedLines[0].chords[0].value).to.equal('Cmin');
-      expect(parsedLines[0].chords[0].pos).to.equal(0);
-      expect(parsedLines[0].chords[1].value).to.equal('Dmin');
-      expect(parsedLines[0].chords[1].pos).to.equal(5);
     });
 
     it('should allow letters in chords', function() {
@@ -494,11 +474,26 @@ describe('chordpro', function() {
     });
 
     it('should not add lyrics divs if only chords on a line', function() {
-      var source = '[A][B]';
+      var source = '[Am7][B]';
+
+      var result = chordpro.toHtml(source);
+      expect(result).to.not.contain('lyrics');
+    });
+
+    it('should keep spacing between chords with no lyrics', function() {
+      var source = '[A]     [B]';
 
       var result = chordpro.toHtml(source);
       expect(result).to.equal(
-        '<div class="line"><div class="linefragment"><div class="chord">A</div></div><div class="linefragment"><div class="chord">B</div></div></div>');
+        '<div class="line"><div class="linefragment"><div class="chord">A</div></div><div class="linefragment"><div class="chord-spacer">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div><div class="chord">B</div></div></div>');
+    });
+
+    it('should keep spacing between chords at end of a line', function() {
+      var source = 'one[A]   [B]';
+
+      var result = chordpro.toHtml(source);
+      expect(result).to.equal(
+        '<div class="line"><div class="linefragment"><div class="chord">&nbsp;</div><div class="lyrics">one</div></div><div class="linefragment"><div class="chord">A</div><div class="lyrics">&nbsp;</div></div><div class="linefragment"><div class="chord">B</div><div class="lyrics">&nbsp;&nbsp;&nbsp;&nbsp;</div></div></div>');
     });
 
     it('should maintain empty lines', function() {

@@ -1,9 +1,8 @@
 .lyrics {
   white-space: pre;
 }
+
 .line {
-  width: 96%;
-  margin: 2%;
   overflow: auto;
   display: -webkit-box;
   display: -moz-box;
@@ -12,6 +11,21 @@
   display: flex;
   flex-wrap: wrap;
 }
+
 .linefragment {
   display: inline-block;
+}
+
+.chord {
+  font-weight: bold;
+  white-space: pre;
+}
+
+.chord-spacer {
+  font-family: Monospace;
+  float: right;
+}
+
+.song-title-section {
+  margin-bottom: 10px;
 }
