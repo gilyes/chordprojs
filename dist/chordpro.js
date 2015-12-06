@@ -149,18 +149,25 @@ function _getDirectiveType(type) {
 function _formatParsedLine(parsedLine) {
   var indexes = _getSegmentStartIndexes(parsedLine);
 
+  if (parsedLine.line.length == 0) {
+    return '<div class="line"><div class="linefragment"><div class="lyrics">&nbsp;</div></div></div>';
+  }
+
   var html = '';
   for (var i = 0; i < indexes.length; i++) {
     html += '<div class="linefragment">';
     if (parsedLine.chords && parsedLine.chords.length) {
-      // chord line takes up space even if because it uses &nbsp;, skip if no chords in this line
+      // if there are any chords on this line, add a div for each segment (on empty an &nbsp; will be inserted)
       html += _getChordHtml(parsedLine.chords, indexes[i]);
     }
     html += _getLyricsHtml(parsedLine.lyrics, indexes[i], i < indexes.length - 1 ? indexes[i + 1] - 1 : null);
+
+    // TODO: directives
+
     html += '</div>';
   }
 
-  return html ? '<div class="line">' + html + '</div>' : "";
+  return html ? '<div class="line">' + html + '</div>' : '';
 }
 
 function _getSegmentStartIndexes(parsedLine) {
@@ -174,7 +181,7 @@ function _getSegmentStartIndexes(parsedLine) {
 
   var indexes = [];
   // find word starts
-  if (parsedLine.lyrics && parsedLine.lyrics.length > 0) {
+  if (parsedLine.lyrics) {
     var wordRegex = /(\s*)([^\s]+)/g;
     var match;
     while (match = wordRegex.exec(parsedLine.lyrics)) {

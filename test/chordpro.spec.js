@@ -399,6 +399,7 @@ describe('chordpro', function() {
       expect(indexes.length).to.equal(2);
       expect(indexes).to.eql([5, 7]);
     });
+
   });
 
   describe('_getChordHtml', function() {
@@ -435,6 +436,12 @@ describe('chordpro', function() {
 
     it('should return non-breaking space after lyrics end', function() {
       var html = chordpro._getLyricsHtml('one two three', 13);
+
+      expect(html).to.equal('<div class="lyrics">&nbsp;</div>')
+    });
+
+    it('should return non-breaking space for empty lyrics line', function() {
+      var html = chordpro._getLyricsHtml('', 0);
 
       expect(html).to.equal('<div class="lyrics">&nbsp;</div>')
     });
@@ -484,6 +491,14 @@ describe('chordpro', function() {
       var result = chordpro.toHtml(source);
       expect(result).to.equal(
         '<div class="line"><div class="linefragment"><div class="lyrics">[No </div></div><div class="linefragment"><div class="lyrics">chord] </div></div><div class="linefragment"><div class="lyrics">Lyrics</div></div></div>');
+    });
+
+    it('should maintain empty lines', function() {
+      var source = 'line1\n\nline2';
+
+      var result = chordpro.toHtml(source);
+      expect(result).to.equal(
+        '<div class="line"><div class="linefragment"><div class="lyrics">line1</div></div></div><div class="line"><div class="linefragment"><div class="lyrics">&nbsp;</div></div></div><div class="line"><div class="linefragment"><div class="lyrics">line2</div></div></div>');
     });
   });
 });
