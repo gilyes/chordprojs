@@ -493,6 +493,14 @@ describe('chordpro', function() {
         '<div class="line"><div class="linefragment"><div class="lyrics">[No </div></div><div class="linefragment"><div class="lyrics">chord] </div></div><div class="linefragment"><div class="lyrics">Lyrics</div></div></div>');
     });
 
+    it('should not add lyrics divs if only chords on a line', function() {
+      var source = '[A][B]';
+
+      var result = chordpro.toHtml(source);
+      expect(result).to.equal(
+        '<div class="line"><div class="linefragment"><div class="chord">A</div></div><div class="linefragment"><div class="chord">B</div></div></div>');
+    });
+
     it('should maintain empty lines', function() {
       var source = 'line1\n\nline2';
 
