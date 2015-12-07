@@ -68,6 +68,9 @@ function _parseLine(line) {
         if (word) {
           segment.lyrics = word;
           index += word.length;
+        } else {
+          // should not get here, but just in case...
+          index++;
         }
       }
     }
@@ -78,7 +81,7 @@ function _parseLine(line) {
   return parsedLine;
 }
 
-function _parseChord(line, regex) {
+function _parseChord(line) {
   var regex = /^\[([a-zA-Z0-9#\/]*)\]/;
   var match = regex.exec(line);
   if (match) {
@@ -89,7 +92,7 @@ function _parseChord(line, regex) {
   }
 }
 
-function _parseDirective(line, regex) {
+function _parseDirective(line) {
   var regex = /^\{\s*([^:}]*)\s*:{0,1}\s*([^:]*?)\s*}/;
   var match = regex.exec(line);
   if (match) {
@@ -101,15 +104,20 @@ function _parseDirective(line, regex) {
   }
 }
 
-function _parseWord(line, regex) {
-  var regex = /^([^\s\[\{]*)/;
+function _parseWord(line) {
+  // allow word starting with [ or { but only if not part of a chord/directive.
+  if (_parseChord(line) || _parseDirective(line)) {
+    return 'undefined';
+  }
+
+  var regex = /^([\[\{]?[^\s\[\{]*)/;
   var match = regex.exec(line);
   if (match) {
     return match[1];
   }
 }
 
-function _parseWhitespace(line, regex) {
+function _parseWhitespace(line) {
   var regex = /^([\s]*)/;
   var match = regex.exec(line);
   if (match) {
@@ -138,7 +146,7 @@ function _formatDirective(directive) {
     case 'subtitle':
       return '<span class="song-subtitle">' + directive.value + '</span>';
     case 'comment':
-      return '<span class="song-comment">' + title + '</span>';
+      return '<span class="song-comment">' + directive.value + '</span>';
     case 'soc':
       return '<div class="song-soc">';
     case 'eoc':
@@ -152,8 +160,12 @@ function _formatDirective(directive) {
   }
 }
 
-function _formatChord(chord) {
-  return '<span class="song-chord">' + chord + '</span>';
+function _formatChord(chord, hasLyrics) {
+  if (hasLyrics || chord == ' ') {
+    return '<span class="song-chord">' + chord + '</span>';
+  } else {
+    return '<span class="song-chord-nolyrics">' + chord + '</span>';
+  }
 }
 
 function _formatLyrics(lyrics) {
@@ -190,7 +202,7 @@ function _formatParsedLine(parsedLine) {
         if (hasChords) {
           // if there are no chords on this line the do not add any placeholder chords either
           var chord = parsedLineSegment.chord ? parsedLineSegment.chord : ' ';
-          html += _formatChord(chord);
+          html += _formatChord(chord, parsedLineSegment.lyrics && !parsedLineSegment.lyrics.match(/^\s*$/));
         }
 
         html += _formatLyrics(parsedLineSegment.lyrics);

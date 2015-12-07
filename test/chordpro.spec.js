@@ -131,22 +131,28 @@ describe('chordpro', function() {
       expect(word).to.equal("some");
     });
 
+    it('should parse word', function() {
+      var word = chordpro._parseWord("[")
+
+      expect(word).to.equal("[");
+    });
+
     it('should return empty for whitespace', function() {
       var word = chordpro._parseWord(" some words")
 
       expect(word).to.equal('');
     });
 
-    it('should return empty for chord', function() {
+    it('should return undefined for chord', function() {
       var word = chordpro._parseWord("[A]some words")
 
-      expect(word).to.equal('');
+      expect(word).to.equal(undefined);
     });
 
-    it('should return empty for directive', function() {
+    it('should return undefined for directive', function() {
       var word = chordpro._parseWord("{soc}")
 
-      expect(word).to.equal('');
+      expect(word).to.equal(undefined);
     });
   });
 

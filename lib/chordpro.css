@@ -1,9 +1,11 @@
 .song-lyrics {
   white-space: pre;
+  display: block;
 }
 
 .song-lyrics-whitespace {
   font-family: monospace;
+  display: inline-block;
 }
 
 .song-line {
@@ -23,6 +25,13 @@
 .song-chord {
   font-weight: bold;
   white-space: pre;
+  display: block;
+}
+
+.song-chord-nolyrics {
+  font-weight: bold;
+  white-space: pre;
+  display: inline-block;
 }
 
 .song-chord-spacer {
