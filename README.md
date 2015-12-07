@@ -1,7 +1,11 @@
 [![Build Status](https://travis-ci.org/gilyes/chordprojs.svg?branch=master)](https://travis-ci.org/gilyes/chordprojs)
 
-# chordprojs - a Chordpro parser and formatter
+### chordprojs - a Chordpro parser and formatter
 
-## Current limitations
+#### Usage
 
- - Only title and subtitle directives applied by formatters.
+```javascript
+chordpro.toHtml(source)
+```
+
+CSS required for the generated HTML is defined in `chordpro.css`.
