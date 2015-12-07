@@ -155,6 +155,10 @@ function _formatDirective(directive) {
       return '<div class="song-soh">';
     case 'eoh':
       return '</div>';
+    case 'sot':
+      return '<div class="song-sot">';
+    case 'eot':
+      return '</div>';
     default:
       return '';
   }
