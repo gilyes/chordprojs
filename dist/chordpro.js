@@ -68,7 +68,7 @@ function _parseLine(line) {
         if (word) {
           segment.lyrics = word;
           index += word.length;
-        } else {
+        } else if (!chord) {
           // should not get here, but just in case...
           index++;
         }

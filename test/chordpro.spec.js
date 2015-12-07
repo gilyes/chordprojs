@@ -226,6 +226,14 @@ describe('chordpro', function() {
       expect(parsedLine[3].chord).to.equal('D');
     });
 
+    it('should parse two chords following each other', function() {
+      var parsedLine = chordpro._parseLine('[C][D]');
+
+      expect(parsedLine.length).to.equal(2);
+      expect(parsedLine[0].chord).to.equal('C');
+      expect(parsedLine[1].chord).to.equal('D');
+    });
+
     it('should return lyrics field with one non-breaking space for empty line', function() {
       var parsedLine = chordpro._parseLine('');
 
