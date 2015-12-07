@@ -1,8 +1,12 @@
-.lyrics {
+.song-lyrics {
   white-space: pre;
 }
 
-.line {
+.song-lyrics-whitespace {
+  font-family: monospace;
+}
+
+.song-line {
   overflow: auto;
   display: -webkit-box;
   display: -moz-box;
@@ -12,20 +16,15 @@
   flex-wrap: wrap;
 }
 
-.linefragment {
+.song-linesegment {
   display: inline-block;
 }
 
-.chord {
+.song-chord {
   font-weight: bold;
   white-space: pre;
 }
 
-.chord-spacer {
-  font-family: Monospace;
-  float: right;
-}
-
-.song-title-section {
-  margin-bottom: 10px;
+.song-chord-spacer {
+  font-family: monospace;
 }

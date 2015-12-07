@@ -11,8 +11,8 @@
     "url": "https://github.com/gilyes/chordprojs/issues"
   },
   "dependencies": {
-    "sanitize-html": "^1.11.1",
-    "underscore": "^1.8.3"
+    "lodash": "^3.10.1",
+    "sanitize-html": "^1.11.1"
   },
   "devDependencies": {
     "babel-loader": "^5.0.0",

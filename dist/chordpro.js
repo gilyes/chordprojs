@@ -4,18 +4,21 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.parse = parse;
-exports._getSegmentStartIndexes = _getSegmentStartIndexes;
-exports._getChordHtml = _getChordHtml;
-exports._getLyricsHtml = _getLyricsHtml;
+exports._parseLine = _parseLine;
+exports._parseChord = _parseChord;
+exports._parseDirective = _parseDirective;
+exports._parseWord = _parseWord;
+exports._parseWhitespace = _parseWhitespace;
 exports.toHtml = toHtml;
+exports.getMetadata = getMetadata;
 
 var _sanitizeHtml = require('sanitize-html');
 
 var _sanitizeHtml2 = _interopRequireDefault(_sanitizeHtml);
 
-var _underscore = require('underscore');
+var _lodash = require('lodash');
 
-var _underscore2 = _interopRequireDefault(_underscore);
+var _lodash2 = _interopRequireDefault(_lodash);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -33,67 +36,167 @@ function parse(source) {
 }
 
 function _parseLine(line) {
-  var parsedLine = {
-    line: line,
-    lyrics: '',
-    chords: [],
-    directives: []
-  };
+  var parsedLine = [];
 
-  var chordRegex = /\[([a-zA-Z0-9#/]+)\]/g;
-  var directiveRegex = /\{\s*([^:}]*)\s*:{0,1}\s*([^:]*?)\s*}/g;
-
-  var matches = [];
-  while (match = chordRegex.exec(line)) {
-    match.type = 'chord';
-    matches.push(match);
-  }
-  while (match = directiveRegex.exec(line)) {
-    match.type = 'directive';
-    matches.push(match);
+  if (line === '') {
+    parsedLine.push({
+      lyrics: '&nbsp;'
+    });
   }
 
-  // sort chord/directive matches in ascending order based on index
-  matches.sort(function (m1, m2) {
-    return m1.index - m2.index;
+  var index = 0;
+  while (index < line.length) {
+    var segment = {};
+
+    var directive = _parseDirective(line.substring(index, line.length));
+    if (directive) {
+      segment.directive = directive;
+      index += directive.source.length;
+    } else {
+      var chord = _parseChord(line.substring(index, line.length));
+      if (chord) {
+        segment.chord = chord.value;
+        index += chord.source.length;
+      }
+
+      var whitespace = _parseWhitespace(line.substring(index, line.length));
+      if (whitespace) {
+        segment.lyrics = whitespace;
+        index += whitespace.length;
+      } else {
+        var word = _parseWord(line.substring(index, line.length));
+        if (word) {
+          segment.lyrics = word;
+          index += word.length;
+        }
+      }
+    }
+
+    parsedLine.push(segment);
+  }
+
+  return parsedLine;
+}
+
+function _parseChord(line, regex) {
+  var regex = /^\[([a-zA-Z0-9#\/]*)\]/;
+  var match = regex.exec(line);
+  if (match) {
+    return {
+      source: match[0],
+      value: match[1]
+    };
+  }
+}
+
+function _parseDirective(line, regex) {
+  var regex = /^\{\s*([^:}]*)\s*:{0,1}\s*([^:]*?)\s*}/;
+  var match = regex.exec(line);
+  if (match) {
+    return {
+      source: match[0],
+      type: _getDirectiveType(match[1]),
+      value: match[2]
+    };
+  }
+}
+
+function _parseWord(line, regex) {
+  var regex = /^([^\s\[\{]*)/;
+  var match = regex.exec(line);
+  if (match) {
+    return match[1];
+  }
+}
+
+function _parseWhitespace(line, regex) {
+  var regex = /^([\s]*)/;
+  var match = regex.exec(line);
+  if (match) {
+    return match[1];
+  }
+}
+
+function _getDirectiveType(type) {
+  type = type.toLowerCase();
+  switch (type) {
+    case 't':
+      return 'title';
+    case 'st':
+      return 'subtitle';
+    case 'c':
+      return 'comment';
+    default:
+      return type;
+  }
+}
+
+function _formatDirective(directive) {
+  switch (directive.type) {
+    case 'title':
+      return '<span class="song-title">' + directive.value + '</span>';
+    case 'subtitle':
+      return '<span class="song-subtitle">' + directive.value + '</span>';
+    case 'comment':
+      return '<span class="song-comment">' + title + '</span>';
+    case 'soc':
+      return '<div class="song-soc">';
+    case 'eoc':
+      return '</div>';
+    case 'soh':
+      return '<div class="song-soh">';
+    case 'eoh':
+      return '</div>';
+    default:
+      return '';
+  }
+}
+
+function _formatChord(chord) {
+  return '<span class="song-chord">' + chord + '</span>';
+}
+
+function _formatLyrics(lyrics) {
+  if (!lyrics) {
+    lyrics = ' ';
+  }
+
+  var isWhitespace = lyrics.match(/^\s*$/);
+
+  return '<span class="song-lyrics' + (isWhitespace ? ' song-lyrics-whitespace">' : '">') + lyrics + '</span>';
+}
+
+function _formatParsedLine(parsedLine) {
+  var html = '';
+  html += '<span class="song-line">';
+
+  var hasChords = _lodash2.default.find(parsedLine, function (parsedLine) {
+    return parsedLine.chord;
   });
 
-  var fragment;
-  var sourcePos = 0;
-  var match;
   var _iteratorNormalCompletion = true;
   var _didIteratorError = false;
   var _iteratorError = undefined;
 
   try {
-    for (var _iterator = matches[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var _match = _step.value;
+    for (var _iterator = parsedLine[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var parsedLineSegment = _step.value;
 
-      // append lyrics text ending at current match position
-      fragment = line.substring(sourcePos, _match.index);
-      if (fragment) {
-        parsedLine.lyrics += fragment;
-      }
+      html += '<span class="song-linesegment">';
+      if (parsedLineSegment.directive) {
+        html += _formatDirective(parsedLineSegment.directive);
+      } else {
 
-      if (_match.type == 'chord') {
-        var sourceChord = _match[0];
-        parsedLine.chords.push({
-          pos: parsedLine.lyrics.length,
-          value: sourceChord.replace(/[\[\]]/g, '')
-        });
-        sourcePos = _match.index + sourceChord.length;
-      } else if (_match.type == 'directive') {
-        var directive = _match[0];
-        parsedLine.directives.push({
-          pos: parsedLine.lyrics.length,
-          type: _getDirectiveType(_match[1]),
-          value: _match[2]
-        });
-        sourcePos = _match.index + directive.length;
+        if (hasChords) {
+          // if there are no chords on this line the do not add any placeholder chords either
+          var chord = parsedLineSegment.chord ? parsedLineSegment.chord : ' ';
+          html += _formatChord(chord);
+        }
+
+        html += _formatLyrics(parsedLineSegment.lyrics);
       }
+      html += '</span>';
     }
-
-    // append lyrics text following last chord/directive
   } catch (err) {
     _didIteratorError = true;
     _iteratorError = err;
@@ -109,165 +212,7 @@ function _parseLine(line) {
     }
   }
 
-  fragment = line.substring(sourcePos, line.length);
-  if (fragment) {
-    parsedLine.lyrics += fragment;
-  }
-
-  // trim end of lyrics text
-  parsedLine.lyrics = parsedLine.lyrics.replace(/\s+$/, '');
-
-  return parsedLine;
-}
-
-function _getDirectiveType(type) {
-  type = type.toLowerCase();
-  if (type === 't') {
-    return 'title';
-  } else if (type === 'st') {
-    return 'subtitle';
-  } else if (type === 'c') {
-    return 'comment';
-  }
-  return type;
-}
-
-function _formatParsedLine(parsedLine) {
-  var indexes = _getSegmentStartIndexes(parsedLine);
-
-  if (parsedLine.line.length == 0) {
-    return '<div class="line"><div class="linefragment"><div class="lyrics">&nbsp;</div></div></div>';
-  }
-
-  var html = '';
-  var hasLyrics = !parsedLine.lyrics.match(/^\s*$/);
-  for (var i = 0; i < indexes.length; i++) {
-    html += '<div class="linefragment">';
-    if (parsedLine.chords && parsedLine.chords.length) {
-      if (!hasLyrics && i > 0) {
-        // if no lyrics, insert a spacer before current chord
-        console.log(i, indexes[i], indexes[i - 1]);
-        html += _getChordSpacerHtml(indexes[i] - indexes[i - 1] - parsedLine.chords[i - 1].value.length + 1);
-      }
-      // if there are any chords on this line, add a div for each segment (on empty an &nbsp; will be inserted)
-      html += _getChordHtml(parsedLine.chords, indexes[i]);
-    }
-    if (hasLyrics) {
-      // if not chords-only, add lyrics div
-      html += _getLyricsHtml(parsedLine.lyrics, indexes[i], i < indexes.length - 1 ? indexes[i + 1] - 1 : null);
-    }
-
-    // TODO: directives
-
-    html += '</div>';
-  }
-
-  return html ? '<div class="line">' + html + '</div>' : '';
-}
-
-function _getSegmentStartIndexes(parsedLine) {
-  function indexOfGroup(match, n) {
-    var index = match.index;
-    for (var i = 1; i < n; i++) {
-      index += match[i].length;
-    }
-    return index;
-  }
-
-  var indexes = [];
-  // find word starts
-  if (parsedLine.lyrics) {
-    var wordRegex = /(\s*)([^\s]+)/g;
-    var match;
-    while (match = wordRegex.exec(parsedLine.lyrics)) {
-      var index = indexOfGroup(match, 2);
-      if (!_underscore2.default.find(parsedLine.chords, function (chord) {
-        return index > chord.pos && index <= chord.pos + chord.value.length;
-      })) {
-        indexes.push(index);
-      }
-    }
-  }
-
-  console.log(parsedLine);
-  // add in chord indexes that are not on word starts
-  if (parsedLine.chords) {
-    var _iteratorNormalCompletion2 = true;
-    var _didIteratorError2 = false;
-    var _iteratorError2 = undefined;
-
-    try {
-      for (var _iterator2 = parsedLine.chords[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-        var chord = _step2.value;
-
-        if (!_underscore2.default.contains(indexes, chord.pos)) {
-          indexes.push(chord.pos);
-        }
-      }
-    } catch (err) {
-      _didIteratorError2 = true;
-      _iteratorError2 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion2 && _iterator2.return) {
-          _iterator2.return();
-        }
-      } finally {
-        if (_didIteratorError2) {
-          throw _iteratorError2;
-        }
-      }
-    }
-  }
-
-  // sort indexes
-  indexes.sort(function (i1, i2) {
-    return i1 - i2;
-  });
-
-  return indexes;
-}
-
-function _getChordHtml(chords, startIndex) {
-  var html = '<div class="chord">';
-  var chord;
-  if (chords) {
-    chord = _underscore2.default.find(chords, function (c) {
-      return c.pos == startIndex;
-    });
-  }
-  if (chord) {
-    html += chord.value;
-  } else {
-    html += "&nbsp;";
-  }
-  html += '</div>';
-  return html;
-}
-
-function _getLyricsHtml(lyrics, startIndex, endIndex) {
-  var html = '<div class="lyrics">';
-  if (startIndex > lyrics.length - 1) {
-    // pad lyrics with non-breaking spaces to maintain spacing between chords at end of line
-    for (var i = lyrics.length - 1; i < startIndex; i++) {
-      html += '&nbsp;';
-    }
-  } else {
-    if (!endIndex) {
-      endIndex = lyrics.length - 1;
-    }
-    html += lyrics.substring(startIndex, endIndex + 1);
-  }
-  html += '</div>';
-  return html;
-}
-
-function _getChordSpacerHtml(count) {
-  var html = '<div class="chord-spacer">';
-  for (var i = 0; i < count; i++) {
-    html += '&nbsp;';
-  }
-  html += '</div>';
+  html += '</span>';
   return html;
 }
 
@@ -282,21 +227,6 @@ function toHtml(source) {
   var parsedLines = parse(source);
 
   var html = '';
-
-  // add title and subtitle if found
-  var title = _getDirectiveValue(parsedLines, 'title');
-  var subTitle = _getDirectiveValue(parsedLines, 'subtitle');
-  if (title || subTitle) {
-    html += '<div class="song-title-section">';
-    if (title) {
-      html += '<div class="song-title">' + title + '</div>';
-    }
-    if (subTitle) {
-      html += '<div class="song-subtitle">' + subTitle + '</div>';
-    }
-    html += '</div>';
-  }
-
   parsedLines.forEach(function (parsedLine) {
     html += _formatParsedLine(parsedLine);
   });
@@ -304,35 +234,62 @@ function toHtml(source) {
   return html;
 }
 
-function _getDirectiveValue(parsedLines, directiveKey) {
-  var _iteratorNormalCompletion3 = true;
-  var _didIteratorError3 = false;
-  var _iteratorError3 = undefined;
+function getMetadata(source) {
+  var metadata = {};
+
+  var parsedLines = parse(source);
+  metadata.title = _getDirectiveValue(parsedLines, 'title');
+  metadata.subtitle = _getDirectiveValue(parsedLines, 'subtitle');
+
+  return metadata;
+}
+
+function _getDirectiveValue(parsedLines, directiveType) {
+  var _iteratorNormalCompletion2 = true;
+  var _didIteratorError2 = false;
+  var _iteratorError2 = undefined;
 
   try {
-    for (var _iterator3 = parsedLines[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-      var parsedLine = _step3.value;
+    for (var _iterator2 = parsedLines[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+      var parsedLine = _step2.value;
+      var _iteratorNormalCompletion3 = true;
+      var _didIteratorError3 = false;
+      var _iteratorError3 = undefined;
 
-      if (parsedLine.directives) {
-        var directive = parsedLine.directives.find(function (element, index, array) {
-          return element.type === directiveKey;
-        });
-        if (directive) {
-          return directive.value;
+      try {
+        for (var _iterator3 = parsedLine[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          var parsedLineSegment = _step3.value;
+
+          if (parsedLineSegment.directive && parsedLineSegment.directive.type === directiveType) {
+            return parsedLineSegment.directive.value;
+          }
+        }
+      } catch (err) {
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion3 && _iterator3.return) {
+            _iterator3.return();
+          }
+        } finally {
+          if (_didIteratorError3) {
+            throw _iteratorError3;
+          }
         }
       }
     }
   } catch (err) {
-    _didIteratorError3 = true;
-    _iteratorError3 = err;
+    _didIteratorError2 = true;
+    _iteratorError2 = err;
   } finally {
     try {
-      if (!_iteratorNormalCompletion3 && _iterator3.return) {
-        _iterator3.return();
+      if (!_iteratorNormalCompletion2 && _iterator2.return) {
+        _iterator2.return();
       }
     } finally {
-      if (_didIteratorError3) {
-        throw _iteratorError3;
+      if (_didIteratorError2) {
+        throw _iteratorError2;
       }
     }
   }

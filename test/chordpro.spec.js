@@ -7,501 +7,358 @@ import * as chordpro from '../lib/chordpro';
 
 describe('chordpro', function() {
 
+  describe('_parseChord', function() {
+
+    it('should parse one-letter chord', function() {
+      var chord = chordpro._parseChord('[C]');
+
+      expect(chord.source).to.equal('[C]');
+      expect(chord.value).to.equal('C');
+    });
+
+    it('should parse multi-letter chord', function() {
+      var chord = chordpro._parseChord('[Cm]');
+
+      expect(chord.source).to.equal('[Cm]');
+      expect(chord.value).to.equal('Cm');
+    });
+
+    it('should parse bass chord', function() {
+      var chord = chordpro._parseChord('[C/F]');
+
+      expect(chord.source).to.equal('[C/F]');
+      expect(chord.value).to.equal('C/F');
+    });
+
+    it('should parse sharp chord', function() {
+      var chord = chordpro._parseChord('[C#]');
+
+      expect(chord.source).to.equal('[C#]');
+      expect(chord.value).to.equal('C#');
+    });
+
+    it('should parse chord followed by whitespace', function() {
+      var chord = chordpro._parseChord('[C#] ');
+
+      expect(chord.source).to.equal('[C#]');
+      expect(chord.value).to.equal('C#');
+    });
+
+    it('should parse chord followed by letters', function() {
+      var chord = chordpro._parseChord('[C#]one');
+
+      expect(chord.source).to.equal('[C#]');
+      expect(chord.value).to.equal('C#');
+    });
+
+    it('should return undefined for non-chord', function() {
+      var chord = chordpro._parseChord('one');
+
+      expect(chord).to.equal(undefined);
+    });
+
+    it('should return undefined for invalid characters in chord', function() {
+      var chord = chordpro._parseChord('[C!]');
+
+      expect(chord).to.equal(undefined);
+    });
+
+  });
+
+  describe('_parseDirective', function() {
+
+    it('should parse title directive', function() {
+      var directive = chordpro._parseDirective('{title: The Title}');
+
+      expect(directive.source).to.equal('{title: The Title}');
+      expect(directive.type).to.equal('title');
+      expect(directive.value).to.equal('The Title');
+    });
+
+    it('should parse abbreviated title directive', function() {
+      var directive = chordpro._parseDirective('{t: The Title}');
+
+      expect(directive.source).to.equal('{t: The Title}');
+      expect(directive.type).to.equal('title');
+      expect(directive.value).to.equal('The Title');
+    });
+
+    it('should parse subtitle directive', function() {
+      var directive = chordpro._parseDirective('{subtitle: The Subtitles}');
+
+      expect(directive.source).to.equal('{subtitle: The Subtitles}');
+      expect(directive.type).to.equal('subtitle');
+      expect(directive.value).to.equal('The Subtitles');
+    });
+
+    it('should parse abbreviated subtitle directive', function() {
+      var directive = chordpro._parseDirective('{st: The Subtitles}');
+
+      expect(directive.source).to.equal('{st: The Subtitles}');
+      expect(directive.type).to.equal('subtitle');
+      expect(directive.value).to.equal('The Subtitles');
+    });
+
+    it('should parse comment directive', function() {
+      var directive = chordpro._parseDirective('{c: this is a comment}');
+
+      expect(directive.source).to.equal('{c: this is a comment}');
+      expect(directive.type).to.equal('comment');
+      expect(directive.value).to.equal('this is a comment');
+    });
+
+    it('should parse directives with no value', function() {
+      var directive = chordpro._parseDirective('{soc}');
+
+      expect(directive.source).to.equal('{soc}');
+      expect(directive.type).to.equal('soc');
+      expect(directive.value).to.equal('');
+    });
+
+    it('should return undefined for not directive', function() {
+      var directive = chordpro._parseDirective('not a directive');
+
+      expect(directive).to.equal(undefined);
+    });
+
+  });
+
+  describe('_parseWord', function() {
+
+    it('should parse word', function() {
+      var word = chordpro._parseWord("some words")
+
+      expect(word).to.equal("some");
+    });
+
+    it('should return empty for whitespace', function() {
+      var word = chordpro._parseWord(" some words")
+
+      expect(word).to.equal('');
+    });
+
+    it('should return empty for chord', function() {
+      var word = chordpro._parseWord("[A]some words")
+
+      expect(word).to.equal('');
+    });
+
+    it('should return empty for directive', function() {
+      var word = chordpro._parseWord("{soc}")
+
+      expect(word).to.equal('');
+    });
+  });
+
+  describe('_parseWhitespace', function() {
+
+    it('should parse whitespace', function() {
+      var word = chordpro._parseWhitespace("   some words")
+
+      expect(word).to.equal('   ');
+    });
+
+    it('should return empty for word', function() {
+      var word = chordpro._parseWhitespace("some words")
+
+      expect(word).to.equal('');
+    });
+
+    it('should return empty for chord', function() {
+      var word = chordpro._parseWhitespace("[A]some words")
+
+      expect(word).to.equal('');
+    });
+
+    it('should return empty for directive', function() {
+      var word = chordpro._parseWhitespace("{soc}")
+
+      expect(word).to.equal('');
+    });
+  });
+
+  describe('_parseLine', function() {
+
+    it('should parse usual mix of lyrics and chords', function() {
+      var parsedLine = chordpro._parseLine('[C]one [D]two');
+
+      expect(parsedLine.length).to.equal(3);
+      expect(parsedLine[0].lyrics).to.equal('one');
+      expect(parsedLine[0].chord).to.equal('C');
+      expect(parsedLine[0].directive).to.equal(undefined);
+      expect(parsedLine[1].lyrics).to.equal(' ');
+      expect(parsedLine[1].chord).to.equal(undefined);
+      expect(parsedLine[1].directive).to.equal(undefined);
+      expect(parsedLine[2].lyrics).to.equal('two');
+      expect(parsedLine[2].chord).to.equal('D');
+      expect(parsedLine[2].directive).to.equal(undefined);
+    });
+
+    it('should maintain whitespace at front of line', function() {
+      var parsedLine = chordpro._parseLine('   [C]one');
+
+      expect(parsedLine.length).to.equal(2);
+      expect(parsedLine[0].lyrics).to.equal('   ');
+      expect(parsedLine[0].chord).to.equal(undefined);
+      expect(parsedLine[0].directive).to.equal(undefined);
+      expect(parsedLine[1].lyrics).to.equal('one');
+      expect(parsedLine[1].chord).to.equal('C');
+      expect(parsedLine[1].directive).to.equal(undefined);
+    });
+
+    it('should maintain whitespace before chords at end of line', function() {
+      var parsedLine = chordpro._parseLine('one   [C]   [D]');
+
+      expect(parsedLine.length).to.equal(4);
+      expect(parsedLine[0].lyrics).to.equal('one');
+      expect(parsedLine[0].chord).to.equal(undefined);
+      expect(parsedLine[1].lyrics).to.equal('   ');
+      expect(parsedLine[1].chord).to.equal(undefined);
+      expect(parsedLine[2].lyrics).to.equal('   ');
+      expect(parsedLine[2].chord).to.equal('C');
+      expect(parsedLine[3].lyrics).to.equal(undefined);
+      expect(parsedLine[3].chord).to.equal('D');
+    });
+
+    it('should return lyrics field with one non-breaking space for empty line', function() {
+      var parsedLine = chordpro._parseLine('');
+
+      expect(parsedLine.length).to.equal(1);
+      expect(parsedLine[0].lyrics).to.equal('&nbsp;');
+      expect(parsedLine[0].chord).to.equal(undefined);
+    });
+
+    it('should parse multiple value-less directives on one line', function() {
+      var parsedLine = chordpro._parseLine('{soh}some text{eoh}');
+
+      expect(parsedLine.length).to.equal(5);
+      expect(parsedLine[0].directive.type).to.equal('soh');
+      expect(parsedLine[1].lyrics).to.equal('some');
+      expect(parsedLine[2].lyrics).to.equal(' ');
+      expect(parsedLine[3].lyrics).to.equal('text');
+      expect(parsedLine[4].directive.type).to.equal('eoh');
+    });
+
+    it('should parse multiple valued directives on one line', function() {
+      var parsedLine = chordpro._parseLine('{c: comment1}some text{c: comment2}');
+
+      expect(parsedLine.length).to.equal(5);
+      expect(parsedLine[0].directive.type).to.equal('comment');
+      expect(parsedLine[0].directive.value).to.equal('comment1');
+      expect(parsedLine[1].lyrics).to.equal('some');
+      expect(parsedLine[2].lyrics).to.equal(' ');
+      expect(parsedLine[3].lyrics).to.equal('text');
+      expect(parsedLine[4].directive.type).to.equal('comment');
+      expect(parsedLine[4].directive.value).to.equal('comment2');
+    });
+  });
+
   describe('parse', function() {
-
-    it('should remove chords from lyrics field', function() {
-      var parsedLines = chordpro.parse('[C]one t[D]wo');
-
-      expect(parsedLines.length).to.equal(1);
-      expect(parsedLines[0].lyrics).to.equal('one two');
-    });
-
-    it('should create chord element for each chord', function() {
-      var parsedLines = chordpro.parse('[C]one t[D]wo');
-
-      expect(parsedLines.length).to.equal(1);
-      expect(parsedLines[0].chords.length).to.equal(2);
-      expect(parsedLines[0].chords[0].value).to.equal('C');
-      expect(parsedLines[0].chords[1].value).to.equal('D');
-    });
-
-    it('should set positions for each chord', function() {
-      var parsedLines = chordpro.parse('[C]one t[D]wo');
-
-      expect(parsedLines.length).to.equal(1);
-      expect(parsedLines[0].chords.length).to.equal(2);
-      expect(parsedLines[0].chords[0].pos).to.equal(0);
-      expect(parsedLines[0].chords[1].pos).to.equal(5);
-    });
-
-    it('should return original text for lyrics line with no chords', function() {
-      var parsedLines = chordpro.parse('one two');
-
-      expect(parsedLines.length).to.equal(1);
-      expect(parsedLines[0].lyrics).to.equal('one two');
-      expect(parsedLines[0].chords.length).to.equal(0);
-    });
-
-    it('should return empty text field for empty line', function() {
-      var parsedLines = chordpro.parse('');
-
-      expect(parsedLines.length).to.equal(1);
-      expect(parsedLines[0].lyrics).to.equal('');
-    });
-
-    it('should return empty chords list for empty line', function() {
-      var parsedLines = chordpro.parse('');
-
-      expect(parsedLines.length).to.equal(1);
-      expect(parsedLines[0].chords.length).to.equal(0);
-    });
-
-    it('should return empty lyrics field for line with chords only', function() {
-      var parsedLines = chordpro.parse('[C] [D]');
-
-      expect(parsedLines.length).to.equal(1);
-      expect(parsedLines[0].lyrics).to.equal('');
-    });
-
-    it('should allow letters in chords', function() {
-      var parsedLines = chordpro.parse('[C] [D]');
-
-      expect(parsedLines.length).to.equal(1);
-      expect(parsedLines[0].chords.length).to.equal(2);
-      expect(parsedLines[0].chords[0].value).to.equal('C');
-      expect(parsedLines[0].chords[1].value).to.equal('D');
-    });
-
-    it('should allow numbers in chords', function() {
-      var parsedLines = chordpro.parse('[C7] [D7]');
-
-      expect(parsedLines.length).to.equal(1);
-      expect(parsedLines[0].chords.length).to.equal(2);
-      expect(parsedLines[0].chords[0].value).to.equal('C7');
-      expect(parsedLines[0].chords[1].value).to.equal('D7');
-    });
-
-    it('should allow # in chords', function() {
-      var parsedLines = chordpro.parse('[C#] [D7]');
-
-      expect(parsedLines.length).to.equal(1);
-      expect(parsedLines[0].chords.length).to.equal(2);
-      expect(parsedLines[0].chords[0].value).to.equal('C#');
-      expect(parsedLines[0].chords[1].value).to.equal('D7');
-    });
-
-    it('should allow / in chords', function() {
-      var parsedLines = chordpro.parse('[C/D] [D7]');
-
-      expect(parsedLines.length).to.equal(1);
-      expect(parsedLines[0].chords.length).to.equal(2);
-      expect(parsedLines[0].chords[0].value).to.equal('C/D');
-      expect(parsedLines[0].chords[1].value).to.equal('D7');
-    });
-
-    it('should not allow other special characters in chords', function() {
-      var parsedLines = chordpro.parse('[C!] [D]');
-
-      expect(parsedLines.length).to.equal(1);
-      expect(parsedLines[0].lyrics).to.equal('[C!]');
-      expect(parsedLines[0].chords.length).to.equal(1);
-      expect(parsedLines[0].chords[0].value).to.equal('D');
-    });
-
-    it('should allow and maintain leading whitespace', function() {
-      var parsedLines = chordpro.parse('  [C]one');
-
-      expect(parsedLines.length).to.equal(1);
-      expect(parsedLines[0].lyrics).to.equal('  one');
-      expect(parsedLines[0].chords.length).to.equal(1);
-      expect(parsedLines[0].chords[0].value).to.equal('C');
-      expect(parsedLines[0].chords[0].pos).to.equal(2);
-    });
 
     it('should handle multiple lines', function() {
       var parsedLines = chordpro.parse('[C]one\n[D]two');
 
       expect(parsedLines.length).to.equal(2);
-      expect(parsedLines[0].lyrics).to.equal('one');
-      expect(parsedLines[0].chords.length).to.equal(1);
-      expect(parsedLines[0].chords[0].value).to.equal('C');
-      expect(parsedLines[1].lyrics).to.equal('two');
-      expect(parsedLines[1].chords.length).to.equal(1);
-      expect(parsedLines[1].chords[0].value).to.equal('D');
-    });
-
-    it('should set title directive type to "title"', function() {
-      var parsedLines = chordpro.parse('{title: Prison Without Walls}');
-
-      expect(parsedLines[0].directives[0].type).to.equal('title');
-    });
-
-    it('should set abbreviated title directive type to "title"', function() {
-      var parsedLines = chordpro.parse('{t: Prison Without Walls}');
-
-      expect(parsedLines[0].directives[0].type).to.equal('title');
-    });
-
-    it('should parse title directive value', function() {
-      var parsedLines = chordpro.parse('{title: Prison Without Walls}');
-
-      expect(parsedLines[0].directives[0].value).to.equal('Prison Without Walls');
-    });
-
-    it('should parse abbreviated title directive value', function() {
-      var parsedLines = chordpro.parse('{t: Prison Without Walls}');
-
-      expect(parsedLines[0].directives[0].value).to.equal('Prison Without Walls');
-    });
-
-    it('should set subtitle directive type to "subtitle"', function() {
-      var parsedLines = chordpro.parse('{subtitle: Napalm Death}');
-
-      expect(parsedLines[0].directives[0].type).to.equal('subtitle');
-    });
-
-    it('should set abbreviated subtitle directive type to "subtitle"', function() {
-      var parsedLines = chordpro.parse('{st: Napalm Death}');
-
-      expect(parsedLines[0].directives[0].type).to.equal('subtitle');
-    });
-
-    it('should parse subtitle directive value', function() {
-      var parsedLines = chordpro.parse('{subtitle: Napalm Death}');
-
-      expect(parsedLines[0].directives[0].value).to.equal('Napalm Death');
-    });
-
-    it('should parse abbreviated subtitle directive value', function() {
-      var parsedLines = chordpro.parse('{st: Napalm Death}');
-
-      expect(parsedLines[0].directives[0].value).to.equal('Napalm Death');
-    });
-
-    it('should set comment directive type to "comment"', function() {
-      var parsedLines = chordpro.parse('{c: this is a comment}');
-
-      expect(parsedLines[0].directives[0].type).to.equal('comment');
-    });
-
-    it('should parse comment directive value', function() {
-      var parsedLines = chordpro.parse('{c: this is a comment}');
-
-      expect(parsedLines[0].directives[0].value).to.equal('this is a comment');
-    });
-
-    it('should set start of chorus directive type to "soc"', function() {
-      var parsedLines = chordpro.parse('{soc}');
-
-      expect(parsedLines[0].directives[0].type).to.equal('soc');
-    });
-
-    it('should set end of chorus directive type to "eoc"', function() {
-      var parsedLines = chordpro.parse('{eoc}');
-
-      expect(parsedLines[0].directives[0].type).to.equal('eoc');
-    });
-
-    it('should set start of tab directive type to "sot"', function() {
-      var parsedLines = chordpro.parse('{sot}');
-
-      expect(parsedLines[0].directives[0].type).to.equal('sot');
-    });
-
-    it('should set end of tab directive type to "eot"', function() {
-      var parsedLines = chordpro.parse('{eot}');
-
-      expect(parsedLines[0].directives[0].type).to.equal('eot');
-    });
-
-    it('should set start of highlight directive type to "soh"', function() {
-      var parsedLines = chordpro.parse('{soh}');
-
-      expect(parsedLines[0].directives[0].type).to.equal('soh');
-    });
-
-    it('should set end of highlight directive type to "eoh"', function() {
-      var parsedLines = chordpro.parse('{eoh}');
-
-      expect(parsedLines[0].directives[0].type).to.equal('eoh');
-    });
-
-    it('should parse multiple value-less directives on one line', function() {
-      var parsedLines = chordpro.parse('{soh}some text{eoh}');
-
-      expect(parsedLines[0].lyrics).to.equal('some text');
-      expect(parsedLines[0].directives.length).to.equal(2);
-      expect(parsedLines[0].directives[0].type).to.equal('soh');
-      expect(parsedLines[0].directives[0].pos).to.equal(0);
-      expect(parsedLines[0].directives[1].type).to.equal('eoh');
-      expect(parsedLines[0].directives[1].pos).to.equal(9);
-    });
-
-    it('should parse multiple valued directives on one line', function() {
-      var parsedLines = chordpro.parse('{c: comment1}some text{c: comment2}');
-
-      expect(parsedLines[0].lyrics).to.equal('some text');
-      expect(parsedLines[0].directives.length).to.equal(2);
-      expect(parsedLines[0].directives[0].type).to.equal('comment');
-      expect(parsedLines[0].directives[0].pos).to.equal(0);
-      expect(parsedLines[0].directives[0].value).to.equal('comment1');
-      expect(parsedLines[0].directives[1].type).to.equal('comment');
-      expect(parsedLines[0].directives[1].pos).to.equal(9);
-      expect(parsedLines[0].directives[1].value).to.equal('comment2');
-    });
-
-    it('should parse mix of lyrics, chords and directives', function() {
-      var parsedLines = chordpro.parse('[C]one {c: some comment}[F]two');
-
-      expect(parsedLines[0].lyrics).to.equal('one two');
-      expect(parsedLines[0].chords.length).to.equal(2);
-      expect(parsedLines[0].chords[0].value).to.equal('C');
-      expect(parsedLines[0].chords[0].pos).to.equal(0);
-      expect(parsedLines[0].chords[1].value).to.equal('F');
-      expect(parsedLines[0].chords[1].pos).to.equal(4);
-      expect(parsedLines[0].directives[0].type).to.equal('comment');
-      expect(parsedLines[0].directives[0].value).to.equal('some comment');
-      expect(parsedLines[0].directives[0].pos).to.equal(4);
-    });
-
-    it('should parse lyrics with directives at end of line', function() {
-      var parsedLines = chordpro.parse('[C]one [F]two {c: some comment}');
-
-      expect(parsedLines[0].lyrics).to.equal('one two');
-      expect(parsedLines[0].chords.length).to.equal(2);
-      expect(parsedLines[0].chords[0].value).to.equal('C');
-      expect(parsedLines[0].chords[0].pos).to.equal(0);
-      expect(parsedLines[0].chords[1].value).to.equal('F');
-      expect(parsedLines[0].chords[1].pos).to.equal(4);
-      expect(parsedLines[0].directives[0].type).to.equal('comment');
-      expect(parsedLines[0].directives[0].value).to.equal('some comment');
-      expect(parsedLines[0].directives[0].pos).to.equal(8);
-    });
-
-    it('should parse lyrics with directives at beginning of line', function() {
-      var parsedLines = chordpro.parse('{c: some comment}[C]one [F]two');
-
-      expect(parsedLines[0].lyrics).to.equal('one two');
-      expect(parsedLines[0].chords.length).to.equal(2);
-      expect(parsedLines[0].chords[0].value).to.equal('C');
-      expect(parsedLines[0].chords[0].pos).to.equal(0);
-      expect(parsedLines[0].chords[1].value).to.equal('F');
-      expect(parsedLines[0].chords[1].pos).to.equal(4);
-      expect(parsedLines[0].directives[0].type).to.equal('comment');
-      expect(parsedLines[0].directives[0].value).to.equal('some comment');
-      expect(parsedLines[0].directives[0].pos).to.equal(0);
+      expect(parsedLines[0][0].chord).to.equal('C');
+      expect(parsedLines[0][0].lyrics).to.equal('one');
+      expect(parsedLines[1][0].chord).to.equal('D');
+      expect(parsedLines[1][0].lyrics).to.equal('two');
     });
 
     it('should ignore comments at beginning of line', function() {
       var parsedLines = chordpro.parse('one\n# comment\ntwo');
 
       expect(parsedLines.length).to.equal(2);
-      expect(parsedLines[0].lyrics).to.equal('one');
-      expect(parsedLines[1].lyrics).to.equal('two');
+      expect(parsedLines[0][0].lyrics).to.equal('one');
+      expect(parsedLines[1][0].lyrics).to.equal('two');
     });
 
     it('should ignore comments preceded by whitespace only', function() {
       var parsedLines = chordpro.parse('one\n   # comment\ntwo');
 
       expect(parsedLines.length).to.equal(2);
-      expect(parsedLines[0].lyrics).to.equal('one');
-      expect(parsedLines[1].lyrics).to.equal('two');
+      expect(parsedLines[0][0].lyrics).to.equal('one');
+      expect(parsedLines[1][0].lyrics).to.equal('two');
     });
 
-  });
-
-  describe('_getSegmentStartIndexes', function() {
-
-    it('should split up at word starts (no chords, non-empty lyrics)', function() {
-      var parsedLine = {
-        lyrics: 'one two three'
-      };
-      var indexes = chordpro._getSegmentStartIndexes(parsedLine);
-
-      expect(indexes.length).to.equal(3);
-      expect(indexes).to.eql([0, 4, 8]);
-    });
-
-    it('should split up at word starts (chord at word start, non-empty lyrics)', function() {
-      var parsedLine = {
-        lyrics: 'one two three',
-        chords: [{
-          value: 'C',
-          pos: 4
-        }]
-      };
-      var indexes = chordpro._getSegmentStartIndexes(parsedLine);
-
-      expect(indexes.length).to.equal(3);
-      expect(indexes).to.eql([0, 4, 8]);
-    });
-
-    it('should split up at word starts and chords (chord not at word start, non-empty lyrics)', function() {
-      var parsedLine = {
-        lyrics: 'one two three',
-        chords: [{
-          value: 'C',
-          pos: 5
-        }]
-      };
-      var indexes = chordpro._getSegmentStartIndexes(parsedLine);
-
-      expect(indexes.length).to.equal(4);
-      expect(indexes).to.eql([0, 4, 5, 8]);
-    });
-
-    it('should should skip word start if chord overlaps it', function() {
-      var parsedLine = {
-        lyrics: 'one two three',
-        chords: [{
-          value: 'C7',
-          pos: 3
-        }]
-      };
-      var indexes = chordpro._getSegmentStartIndexes(parsedLine);
-
-      expect(indexes.length).to.equal(3);
-      expect(indexes).to.eql([0, 3, 8]);
-    });
-
-    it('should split up at chords (empty lyrics)', function() {
-      var parsedLine = {
-        chords: [{
-          value: 'C',
-          pos: 5
-        }, {
-          value: 'D',
-          pos: 7
-        }]
-      };
-      var indexes = chordpro._getSegmentStartIndexes(parsedLine);
-
-      expect(indexes.length).to.equal(2);
-      expect(indexes).to.eql([5, 7]);
-    });
-
-  });
-
-  describe('_getChordHtml', function() {
-
-    it('should return formatted chord at matching position', function() {
-      var chords = [{
-        value: 'C',
-        pos: 5
-      }];
-      var html = chordpro._getChordHtml(chords, 5);
-
-      expect(html).to.equal('<div class="chord">C</div>');
-    });
-
-    it('should return non-breaking space at non-matching position', function() {
-      var chords = [{
-        value: 'C',
-        pos: 5
-      }];
-      var html = chordpro._getChordHtml(chords, 4);
-
-      expect(html).to.equal('<div class="chord">&nbsp;</div>');
-    });
-
-  });
-
-  describe('_getLyricsHtml', function() {
-
-    it('should return formatted lyrics segment between start and end index', function() {
-      var html = chordpro._getLyricsHtml('one two three', 4, 7);
-
-      expect(html).to.equal('<div class="lyrics">two </div>')
-    });
-
-    it('should return non-breaking space after lyrics end', function() {
-      var html = chordpro._getLyricsHtml('one two three', 13);
-
-      expect(html).to.equal('<div class="lyrics">&nbsp;</div>')
-    });
-
-    it('should return non-breaking space for empty lyrics line', function() {
-      var html = chordpro._getLyricsHtml('', 0);
-
-      expect(html).to.equal('<div class="lyrics">&nbsp;</div>')
-    });
-
-    it('should return text until end of lyrics if endIndex not specified', function() {
-      var html = chordpro._getLyricsHtml('one two three', 8);
-
-      expect(html).to.equal('<div class="lyrics">three</div>')
-    });
   });
 
   describe('toHtml', function() {
 
     it('should display title directive with proper class', function() {
-      var source =
-        '{t: The Title}\n' +
-        'Lyrics go here';
+      var source = '{t: The Title}';
+
+      var result = chordpro.toHtml(source);
+      expect(result).to.equal('<span class="song-line"><span class="song-linesegment"><span class="song-title">The Title</span></span></span>');
+    });
+
+    it('should not add chord span if no chords on line', function() {
+      var source = 'Lyrics';
+
+      var result = chordpro.toHtml(source);
+      expect(result).to.equal('<span class="song-line"><span class="song-linesegment"><span class="song-lyrics">Lyrics</span></span></span>');
+    });
+
+    it('should add chord spans for all segments if there are chords on line', function() {
+      var source ='Lyrics [C]here';
 
       var result = chordpro.toHtml(source);
       expect(result).to.equal(
-        '<div class="song-title-section"><div class="song-title">The Title</div></div><div class="line"><div class="linefragment"><div class="lyrics">Lyrics </div></div><div class="linefragment"><div class="lyrics">go </div></div><div class="linefragment"><div class="lyrics">here</div></div></div>');
+        '<span class="song-line"><span class="song-linesegment"><span class="song-chord"> </span><span class="song-lyrics">Lyrics</span></span><span class="song-linesegment"><span class="song-chord"> </span><span class="song-lyrics song-lyrics-whitespace"> </span></span><span class="song-linesegment"><span class="song-chord">C</span><span class="song-lyrics">here</span></span></span>');
     });
 
-    it('should not add chord div if no chords on line', function() {
-      var source =
-        '{t: The Title}\n' +
-        'Lyrics go here';
+    // it('should not add lyrics spans if only chords on a line', function() {
+    //   var source = '[Am7][B]';
+    //
+    //   var result = chordpro.toHtml(source);
+    //   expect(result).to.not.contain('lyrics');
+    // });
+    //
+    // it('should keep spacing between chords with no lyrics', function() {
+    //   var source = '[A]     [B]';
+    //
+    //   var result = chordpro.toHtml(source);
+    //   expect(result).to.equal(
+    //     '<span class="line"><span class="linesegment"><span class="chord">A</span></span><span class="linesegment"><span class="chord"><span class="chord-spacer">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>B</span></span></span>');
+    // });
+    //
+    // it('should keep spacing between chords at end of a line', function() {
+    //   var source = 'one[A]    [B]';
+    //
+    //   var result = chordpro.toHtml(source);
+    //   expect(result).to.equal(
+    //     '<span class="line"><span class="linesegment"><span class="chord">&nbsp;</span><span class="lyrics">one</span></span><span class="linesegment"><span class="chord">A</span><span class="lyrics-placeholder">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span><span class="linesegment"><span class="chord">B</span><span class="lyrics-placeholder">&nbsp;</span></span></span>');
+    // });
+    //
+    // it('should maintain empty lines', function() {
+    //   var source = 'line1\n\nline2';
+    //
+    //   var result = chordpro.toHtml(source);
+    //   expect(result).to.equal(
+    //     '<span class="line"><span class="linesegment"><span class="lyrics">line1</span></span></span><span class="line"><span class="linesegment"><span class="lyrics">&nbsp;</span></span></span><span class="line"><span class="linesegment"><span class="lyrics">line2</span></span></span>');
+    // });
+  });
 
-      var result = chordpro.toHtml(source);
-      expect(result).to.equal(
-        '<div class="song-title-section"><div class="song-title">The Title</div></div><div class="line"><div class="linefragment"><div class="lyrics">Lyrics </div></div><div class="linefragment"><div class="lyrics">go </div></div><div class="linefragment"><div class="lyrics">here</div></div></div>');
+  describe('getMetadata', function() {
+
+    it('should return title when present', function() {
+      var metadata = chordpro.getMetadata('{t: The Title}');
+
+      expect(metadata.title).to.equal('The Title');
     });
 
-    it('should add chord divs for all segments if there are chords on line', function() {
-      var source =
-        '{t: The Title}\n' +
-        'Lyrics go [C]here';
+    it('should return subtitle when present', function() {
+      var metadata = chordpro.getMetadata('{st: The Subtitles}');
 
-      var result = chordpro.toHtml(source);
-      expect(result).to.equal(
-        '<div class="song-title-section"><div class="song-title">The Title</div></div><div class="line"><div class="linefragment"><div class="chord">&nbsp;</div><div class="lyrics">Lyrics </div></div><div class="linefragment"><div class="chord">&nbsp;</div><div class="lyrics">go </div></div><div class="linefragment"><div class="chord">C</div><div class="lyrics">here</div></div></div>');
+      expect(metadata.subtitle).to.equal('The Subtitles');
     });
 
-    it('should not cut off leading [ when not part of a chord', function() {
-      var source = '[No chord] Lyrics';
+    it('should return both title and subtitle when present', function() {
+      var metadata = chordpro.getMetadata('{t: The Title}\n{st: The Subtitles}');
 
-      var result = chordpro.toHtml(source);
-      expect(result).to.equal(
-        '<div class="line"><div class="linefragment"><div class="lyrics">[No </div></div><div class="linefragment"><div class="lyrics">chord] </div></div><div class="linefragment"><div class="lyrics">Lyrics</div></div></div>');
+      expect(metadata.title).to.equal('The Title');
+      expect(metadata.subtitle).to.equal('The Subtitles');
     });
 
-    it('should not add lyrics divs if only chords on a line', function() {
-      var source = '[Am7][B]';
-
-      var result = chordpro.toHtml(source);
-      expect(result).to.not.contain('lyrics');
-    });
-
-    it('should keep spacing between chords with no lyrics', function() {
-      var source = '[A]     [B]';
-
-      var result = chordpro.toHtml(source);
-      expect(result).to.equal(
-        '<div class="line"><div class="linefragment"><div class="chord">A</div></div><div class="linefragment"><div class="chord-spacer">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div><div class="chord">B</div></div></div>');
-    });
-
-    it('should keep spacing between chords at end of a line', function() {
-      var source = 'one[A]   [B]';
-
-      var result = chordpro.toHtml(source);
-      expect(result).to.equal(
-        '<div class="line"><div class="linefragment"><div class="chord">&nbsp;</div><div class="lyrics">one</div></div><div class="linefragment"><div class="chord">A</div><div class="lyrics">&nbsp;</div></div><div class="linefragment"><div class="chord">B</div><div class="lyrics">&nbsp;&nbsp;&nbsp;&nbsp;</div></div></div>');
-    });
-
-    it('should maintain empty lines', function() {
-      var source = 'line1\n\nline2';
-
-      var result = chordpro.toHtml(source);
-      expect(result).to.equal(
-        '<div class="line"><div class="linefragment"><div class="lyrics">line1</div></div></div><div class="line"><div class="linefragment"><div class="lyrics">&nbsp;</div></div></div><div class="line"><div class="linefragment"><div class="lyrics">line2</div></div></div>');
-    });
   });
 });
