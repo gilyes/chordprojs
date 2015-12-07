@@ -107,7 +107,7 @@ function _parseDirective(line) {
 function _parseWord(line) {
   // allow word starting with [ or { but only if not part of a chord/directive.
   if (_parseChord(line) || _parseDirective(line)) {
-    return 'undefined';
+    return undefined;
   }
 
   var regex = /^([\[\{]?[^\s\[\{]*)/;
