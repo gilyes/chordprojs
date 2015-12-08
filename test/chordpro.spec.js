@@ -265,6 +265,14 @@ describe('chordpro', function() {
       expect(parsedLine[4].directive.type).to.equal('comment');
       expect(parsedLine[4].directive.value).to.equal('comment2');
     });
+
+    it('should allow colon in directive value', function() {
+      var parsedLine = chordpro._parseLine('{c: comment:}');
+
+      expect(parsedLine.length).to.equal(1);
+      expect(parsedLine[0].directive.type).to.equal('comment');
+      expect(parsedLine[0].directive.value).to.equal('comment:');
+    });
   });
 
   describe('parse', function() {
