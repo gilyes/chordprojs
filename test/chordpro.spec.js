@@ -300,6 +300,14 @@ describe('chordpro', function() {
       expect(parsedLines[1][0].lyrics).to.equal('two');
     });
 
+    it('should maintain text as is between sot/eot', function() {
+      var parsedLines = chordpro.parse('{sot}\n_ _ _ 1 _ _\n{eot}');
+
+      expect(parsedLines.length).to.equal(3);
+      expect(parsedLines[0][0].directive.type).to.equal('sot');
+      expect(parsedLines[1][0].lyrics).to.equal('_ _ _ 1 _ _');
+      expect(parsedLines[2][0].directive.type).to.equal('eot');
+    });
   });
 
   describe('toHtml', function() {
@@ -348,6 +356,7 @@ describe('chordpro', function() {
       expect(result).to.equal(
         '<span class="song-line"><span class="song-linesegment"><span class="song-lyrics">line1</span></span></span><span class="song-line"><span class="song-linesegment"><span class="song-lyrics">&nbsp;</span></span></span><span class="song-line"><span class="song-linesegment"><span class="song-lyrics">line2</span></span></span>');
     });
+
   });
 
   describe('getMetadata', function() {
