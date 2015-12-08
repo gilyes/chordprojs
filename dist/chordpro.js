@@ -93,7 +93,7 @@ function _parseChord(line) {
 }
 
 function _parseDirective(line) {
-  var regex = /^\{\s*([^:}]*)\s*:{0,1}\s*([^:]*?)\s*}/;
+  var regex = /^\{\s*([^:}]*)\s*:{0,1}\s*(.*?)\s*}/;
   var match = regex.exec(line);
   if (match) {
     return {

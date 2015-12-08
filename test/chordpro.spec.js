@@ -1,8 +1,5 @@
 'use strict';
-import {
-  expect
-}
-from 'chai';
+import { expect } from 'chai';
 import * as chordpro from '../lib/chordpro';
 
 describe('chordpro', function() {
@@ -322,43 +319,35 @@ describe('chordpro', function() {
     });
 
     it('should add chord spans for all segments if there are chords on line', function() {
-      var source ='Lyrics [C]here';
+      var source = 'Lyrics [C]here';
 
       var result = chordpro.toHtml(source);
       expect(result).to.equal(
         '<span class="song-line"><span class="song-linesegment"><span class="song-chord"> </span><span class="song-lyrics">Lyrics</span></span><span class="song-linesegment"><span class="song-chord"> </span><span class="song-lyrics song-lyrics-whitespace"> </span></span><span class="song-linesegment"><span class="song-chord">C</span><span class="song-lyrics">here</span></span></span>');
     });
 
-    // it('should not add lyrics spans if only chords on a line', function() {
-    //   var source = '[Am7][B]';
-    //
-    //   var result = chordpro.toHtml(source);
-    //   expect(result).to.not.contain('lyrics');
-    // });
-    //
-    // it('should keep spacing between chords with no lyrics', function() {
-    //   var source = '[A]     [B]';
-    //
-    //   var result = chordpro.toHtml(source);
-    //   expect(result).to.equal(
-    //     '<span class="line"><span class="linesegment"><span class="chord">A</span></span><span class="linesegment"><span class="chord"><span class="chord-spacer">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>B</span></span></span>');
-    // });
-    //
-    // it('should keep spacing between chords at end of a line', function() {
-    //   var source = 'one[A]    [B]';
-    //
-    //   var result = chordpro.toHtml(source);
-    //   expect(result).to.equal(
-    //     '<span class="line"><span class="linesegment"><span class="chord">&nbsp;</span><span class="lyrics">one</span></span><span class="linesegment"><span class="chord">A</span><span class="lyrics-placeholder">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span><span class="linesegment"><span class="chord">B</span><span class="lyrics-placeholder">&nbsp;</span></span></span>');
-    // });
-    //
-    // it('should maintain empty lines', function() {
-    //   var source = 'line1\n\nline2';
-    //
-    //   var result = chordpro.toHtml(source);
-    //   expect(result).to.equal(
-    //     '<span class="line"><span class="linesegment"><span class="lyrics">line1</span></span></span><span class="line"><span class="linesegment"><span class="lyrics">&nbsp;</span></span></span><span class="line"><span class="linesegment"><span class="lyrics">line2</span></span></span>');
-    // });
+    it('should use spans with nolyrics class if only chords on a line', function() {
+      var source = '[Am7][B]';
+
+      var result = chordpro.toHtml(source);
+      expect(result).to.equal('<span class="song-line"><span class="song-linesegment"><span class="song-chord-nolyrics">Am7</span><span class="song-lyrics song-lyrics-whitespace"> </span></span><span class="song-linesegment"><span class="song-chord-nolyrics">B</span><span class="song-lyrics song-lyrics-whitespace"> </span></span></span>');
+    });
+
+    it('should use spans with nolyrics class on chords at end of a line', function() {
+      var source = 'one[A]    [B]';
+
+      var result = chordpro.toHtml(source);
+      expect(result).to.equal(
+        '<span class="song-line"><span class="song-linesegment"><span class="song-chord"> </span><span class="song-lyrics">one</span></span><span class="song-linesegment"><span class="song-chord-nolyrics">A</span><span class="song-lyrics song-lyrics-whitespace">    </span></span><span class="song-linesegment"><span class="song-chord-nolyrics">B</span><span class="song-lyrics song-lyrics-whitespace"> </span></span></span>');
+    });
+
+    it('should maintain empty lines', function() {
+      var source = 'line1\n\nline2';
+
+      var result = chordpro.toHtml(source);
+      expect(result).to.equal(
+        '<span class="song-line"><span class="song-linesegment"><span class="song-lyrics">line1</span></span></span><span class="song-line"><span class="song-linesegment"><span class="song-lyrics">&nbsp;</span></span></span><span class="song-line"><span class="song-linesegment"><span class="song-lyrics">line2</span></span></span>');
+    });
   });
 
   describe('getMetadata', function() {
