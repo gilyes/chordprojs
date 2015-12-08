@@ -1,6 +1,6 @@
 {
   "name": "chordprojs",
-  "version": "0.0.1",
+  "version": "1.0-beta",
   "main": "dist/chordpro.js",
   "keywords": [
     "chordpro"
