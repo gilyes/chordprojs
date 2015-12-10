@@ -34,6 +34,13 @@ describe('chordpro', function() {
       expect(chord.value).to.equal('C#');
     });
 
+    it('should parse augmented chord', function() {
+      var chord = chordpro._parseChord('[G+]');
+
+      expect(chord.source).to.equal('[G+]');
+      expect(chord.value).to.equal('G+');
+    });
+
     it('should parse chord followed by whitespace', function() {
       var chord = chordpro._parseChord('[C#] ');
 

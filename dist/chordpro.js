@@ -125,7 +125,7 @@ function _parseLine(line) {
 }
 
 function _parseChord(line) {
-  var regex = /^\[([a-zA-Z0-9#\/]*)\]/;
+  var regex = /^\[([a-zA-Z0-9#+\/]*)\]/;
   var match = regex.exec(line);
   if (match) {
     return {
