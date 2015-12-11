@@ -282,109 +282,105 @@ describe('chordpro', function() {
   describe('parse', function() {
 
     it('should handle multiple lines', function() {
-      var parsedLines = chordpro.parse('[C]one\n[D]two');
+      var parseResult = chordpro.parse('[C]one\n[D]two');
 
-      expect(parsedLines.length).to.equal(2);
-      expect(parsedLines[0][0].chord).to.equal('C');
-      expect(parsedLines[0][0].lyrics).to.equal('one');
-      expect(parsedLines[1][0].chord).to.equal('D');
-      expect(parsedLines[1][0].lyrics).to.equal('two');
+      expect(parseResult.parsedLines.length).to.equal(2);
+      expect(parseResult.parsedLines[0][0].chord).to.equal('C');
+      expect(parseResult.parsedLines[0][0].lyrics).to.equal('one');
+      expect(parseResult.parsedLines[1][0].chord).to.equal('D');
+      expect(parseResult.parsedLines[1][0].lyrics).to.equal('two');
     });
 
     it('should ignore comments at beginning of line', function() {
-      var parsedLines = chordpro.parse('one\n# comment\ntwo');
+      var parseResult = chordpro.parse('one\n# comment\ntwo');
 
-      expect(parsedLines.length).to.equal(2);
-      expect(parsedLines[0][0].lyrics).to.equal('one');
-      expect(parsedLines[1][0].lyrics).to.equal('two');
+      expect(parseResult.parsedLines.length).to.equal(2);
+      expect(parseResult.parsedLines[0][0].lyrics).to.equal('one');
+      expect(parseResult.parsedLines[1][0].lyrics).to.equal('two');
     });
 
     it('should ignore comments preceded by whitespace only', function() {
-      var parsedLines = chordpro.parse('one\n   # comment\ntwo');
+      var parseResult = chordpro.parse('one\n   # comment\ntwo');
 
-      expect(parsedLines.length).to.equal(2);
-      expect(parsedLines[0][0].lyrics).to.equal('one');
-      expect(parsedLines[1][0].lyrics).to.equal('two');
+      expect(parseResult.parsedLines.length).to.equal(2);
+      expect(parseResult.parsedLines[0][0].lyrics).to.equal('one');
+      expect(parseResult.parsedLines[1][0].lyrics).to.equal('two');
     });
 
     it('should maintain text as is between sot/eot', function() {
-      var parsedLines = chordpro.parse('{sot}\n_ _ _ 1 _ _\n{eot}');
+      var parseResult = chordpro.parse('{sot}\n_ _ _ 1 _ _\n{eot}');
 
-      expect(parsedLines.length).to.equal(3);
-      expect(parsedLines[0][0].directive.type).to.equal('sot');
-      expect(parsedLines[1][0].lyrics).to.equal('_ _ _ 1 _ _');
-      expect(parsedLines[2][0].directive.type).to.equal('eot');
+      expect(parseResult.parsedLines.length).to.equal(3);
+      expect(parseResult.parsedLines[0][0].directive.type).to.equal('sot');
+      expect(parseResult.parsedLines[1][0].lyrics).to.equal('_ _ _ 1 _ _');
+      expect(parseResult.parsedLines[2][0].directive.type).to.equal('eot');
+    });
+
+    it('should return title when present', function() {
+      var parseResult = chordpro.parse('{t: The Title}');
+
+      expect(parseResult.title).to.equal('The Title');
+    });
+
+    it('should return subtitle when present', function() {
+      var parseResult = chordpro.parse('{st: The Subtitles}');
+
+      expect(parseResult.subTitle).to.equal('The Subtitles');
+    });
+
+    it('should return both title and subtitle when present', function() {
+      var parseResult = chordpro.parse('{t: The Title}\n{st: The Subtitles}');
+
+      expect(parseResult.title).to.equal('The Title');
+      expect(parseResult.subTitle).to.equal('The Subtitles');
     });
   });
 
-  describe('toHtml', function() {
+  describe('format', function() {
 
     it('should display title directive with proper class', function() {
       var source = '{t: The Title}';
 
-      var result = chordpro.toHtml(source);
-      expect(result).to.equal('<span class="song-line"><span class="song-linesegment"><span class="song-title">The Title</span></span></span>');
+      var result = chordpro.format(source);
+      expect(result.html).to.equal('<span class="song-line"><span class="song-linesegment"><span class="song-title">The Title</span></span></span>');
     });
 
     it('should not add chord span if no chords on line', function() {
       var source = 'Lyrics';
 
-      var result = chordpro.toHtml(source);
-      expect(result).to.equal('<span class="song-line"><span class="song-linesegment"><span class="song-lyrics">Lyrics</span></span></span>');
+      var result = chordpro.format(source);
+      expect(result.html).to.equal('<span class="song-line"><span class="song-linesegment"><span class="song-lyrics">Lyrics</span></span></span>');
     });
 
     it('should add chord spans for all segments if there are chords on line', function() {
       var source = 'Lyrics [C]here';
 
-      var result = chordpro.toHtml(source);
-      expect(result).to.equal(
+      var result = chordpro.format(source);
+      expect(result.html).to.equal(
         '<span class="song-line"><span class="song-linesegment"><span class="song-chord"> </span><span class="song-lyrics">Lyrics</span></span><span class="song-linesegment"><span class="song-chord"> </span><span class="song-lyrics song-lyrics-whitespace"> </span></span><span class="song-linesegment"><span class="song-chord">C</span><span class="song-lyrics">here</span></span></span>');
     });
 
     it('should use spans with nolyrics class if only chords on a line', function() {
       var source = '[Am7][B]';
 
-      var result = chordpro.toHtml(source);
-      expect(result).to.equal('<span class="song-line"><span class="song-linesegment"><span class="song-chord-nolyrics">Am7</span><span class="song-lyrics song-lyrics-whitespace"> </span></span><span class="song-linesegment"><span class="song-chord-nolyrics">B</span><span class="song-lyrics song-lyrics-whitespace"> </span></span></span>');
+      var result = chordpro.format(source);
+      expect(result.html).to.equal('<span class="song-line"><span class="song-linesegment"><span class="song-chord-nolyrics">Am7</span><span class="song-lyrics song-lyrics-whitespace"> </span></span><span class="song-linesegment"><span class="song-chord-nolyrics">B</span><span class="song-lyrics song-lyrics-whitespace"> </span></span></span>');
     });
 
     it('should use spans with nolyrics class on chords at end of a line', function() {
       var source = 'one[A]    [B]';
 
-      var result = chordpro.toHtml(source);
-      expect(result).to.equal(
+      var result = chordpro.format(source);
+      expect(result.html).to.equal(
         '<span class="song-line"><span class="song-linesegment"><span class="song-chord"> </span><span class="song-lyrics">one</span></span><span class="song-linesegment"><span class="song-chord-nolyrics">A</span><span class="song-lyrics song-lyrics-whitespace">    </span></span><span class="song-linesegment"><span class="song-chord-nolyrics">B</span><span class="song-lyrics song-lyrics-whitespace"> </span></span></span>');
     });
 
     it('should maintain empty lines', function() {
       var source = 'line1\n\nline2';
 
-      var result = chordpro.toHtml(source);
-      expect(result).to.equal(
+      var result = chordpro.format(source);
+      expect(result.html).to.equal(
         '<span class="song-line"><span class="song-linesegment"><span class="song-lyrics">line1</span></span></span><span class="song-line"><span class="song-linesegment"><span class="song-lyrics">&nbsp;</span></span></span><span class="song-line"><span class="song-linesegment"><span class="song-lyrics">line2</span></span></span>');
-    });
-
-  });
-
-  describe('getMetadata', function() {
-
-    it('should return title when present', function() {
-      var metadata = chordpro.getMetadata('{t: The Title}');
-
-      expect(metadata.title).to.equal('The Title');
-    });
-
-    it('should return subtitle when present', function() {
-      var metadata = chordpro.getMetadata('{st: The Subtitles}');
-
-      expect(metadata.subtitle).to.equal('The Subtitles');
-    });
-
-    it('should return both title and subtitle when present', function() {
-      var metadata = chordpro.getMetadata('{t: The Title}\n{st: The Subtitles}');
-
-      expect(metadata.title).to.equal('The Title');
-      expect(metadata.subtitle).to.equal('The Subtitles');
     });
 
   });

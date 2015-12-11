@@ -5,7 +5,12 @@
 #### Usage
 
 ```javascript
-chordpro.toHtml(source)
+var parseResult = chordpro.parse(source);
+var formatResult = chordpro.formatParseResult(parseResult);
+```
+or
+```javascript
+var formatResult = chordpro.format(source)
 ```
 
-CSS required for the generated HTML is defined in `chordpro.css`.
+`format` generates HTML where, when needed, chords are wrapping together with their associated lyrics line. Default CSS that works with the generated HTML is defined in `chordpro.css`.
