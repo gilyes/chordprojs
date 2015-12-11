@@ -24,10 +24,11 @@ gulp.task('build', function() {
 gulp.task('jshint', function() {
   return gulp.src('lib/**/*.js')
     .pipe(jshint('.jshintrc'))
-    .pipe(jshint.reporter('default'))
+    .pipe(jshint.reporter('jshint-stylish'))
+    .pipe(jshint.reporter('fail'))
 });
 
-gulp.task('test', function() {
+gulp.task('test', ['jshint'], function() {
   return gulp.src('test/**/*.js', {
       read: false
     })
